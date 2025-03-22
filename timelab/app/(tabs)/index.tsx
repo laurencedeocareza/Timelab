@@ -1,14 +1,12 @@
-import { Text, View, Image } from "react-native";
+import { Text, View, Image, Button } from "react-native";
 import { styles } from "../../styles/auth.styles";
 
 export default function Index() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Hello world</Text>
       <Image
-        source={require("../../assets/images/icon.png")}
-        style={styles.image}
-      />
+        source={require("../../assets/images/timeLabLogo.png")} style={styles.image}/>
+        <Button title = "Get Started" />
     </View>
   );
 }
