@@ -108,16 +108,10 @@ export default function Tools() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      {/* Header */}
-      <View className="bg-blue-500 w-full py-3 items-center">
-        <Text className="text-white font-bold text-lg">TIMELAB™</Text>
-      </View>
-
       {/* Tools Title */}
-      <View className="p-6">
+      <View className="p-6 justify-center items-center">
         <Text className="text-2xl font-bold text-black">Tools</Text>
       </View>
-
       {/* Tools Grid */}
       <View className="flex-row flex-wrap px-4 justify-between">
         {tools.map((tool) => (

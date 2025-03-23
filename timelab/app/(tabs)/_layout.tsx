@@ -5,10 +5,14 @@ import "../../global.css";
 
 export default function TabLayout() {
   return (
-    <Tabs>
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
       <Tabs.Screen name="Home" />
       <Tabs.Screen name="Tools" />
-      <Tabs.Screen name="Add" />
+      <Tabs.Screen name="Index" />
       <Tabs.Screen name="Notes" />
       <Tabs.Screen name="Profile" />
     </Tabs>

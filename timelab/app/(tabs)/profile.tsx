@@ -60,14 +60,9 @@ export default function Profile() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      {/* Header */}
-      <View className="bg-blue-500 w-full py-3 items-center">
-        <Text className="text-white font-bold text-lg">TIMELAB™</Text>
-      </View>
-
-      {/* Profile Section */}
-      <View className="items-center mt-4">
-        <Text className="text-xl font-bold">Profile</Text>
+      {/* Tools Title */}
+      <View className="p-6 justify-center items-center">
+        <Text className="text-2xl font-bold text-black">Methods</Text>
 
         {/* Profile Picture */}
         <View className="mt-2 w-20 h-20 border border-gray-300 items-center justify-center">
