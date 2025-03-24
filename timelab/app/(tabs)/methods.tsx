@@ -1,14 +1,3 @@
-<<<<<<< HEAD
-import React from 'react';
-import { View, Text } from 'react-native';
-import { styles } from "../../styles/methods.styles";
-
-const Method: React.FC = () => {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>ngii</Text>
-    </View>
-=======
 import React from "react";
 import { View, Text, TouchableOpacity, SafeAreaView } from "react-native";
 
@@ -133,8 +122,5 @@ export default function Tools() {
         ))}
       </View>
     </SafeAreaView>
->>>>>>> 31dc24bbd6c4f8e481af4472b86d36cd3cb9a41e
   );
-};
-
-export default Method;
+}

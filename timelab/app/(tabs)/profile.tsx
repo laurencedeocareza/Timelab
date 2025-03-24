@@ -1,12 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, SafeAreaView } from "react-native";
 
-<<<<<<< HEAD
-export default function profile() {
-  return (
-    <View>
-      <Text>Profile</Text>
-=======
 // Define badge types for type safety
 interface RegularBadge {
   id: number;
@@ -50,7 +44,6 @@ export default function Profile() {
         ))}
       </View>
       <View className={`w-4 h-6 bg-${color}-500 absolute -bottom-2`} />
->>>>>>> 31dc24bbd6c4f8e481af4472b86d36cd3cb9a41e
     </View>
   );
 

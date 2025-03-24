@@ -85,15 +85,6 @@ export default function HomeScreen() {
   };
 
   return (
-<<<<<<< HEAD
-    <View style={styles.container}>
-      <Text style={styles.title}>Hello World</Text>
-      <Image
-        source={require("../../assets/images/icon.png")}
-        style={styles.image}
-      />
-    </View> 
-=======
     <View className="flex-1 bg-white">
       {/* Header */}
       <View className="w-full p-4 border-b border-gray-200">
@@ -186,6 +177,5 @@ export default function HomeScreen() {
         </View>
       </View>
     </View>
->>>>>>> 31dc24bbd6c4f8e481af4472b86d36cd3cb9a41e
   );
 }
