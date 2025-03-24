@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
+    "@react-native-community/checkbox": "^0.5.17",
     "@react-navigation/bottom-tabs": "^7.2.1",
     "@react-navigation/native": "^7.0.15",
     "@react-navigation/stack": "^7.1.2",
@@ -42,18 +43,24 @@
     "react-native": "0.76.7",
     "react-native-dropdown-select-list": "^2.0.5",
     "react-native-gesture-handler": "~2.20.2",
-    "react-native-reanimated": "~3.16.1",
-    "react-native-safe-area-context": "4.12.0",
+    "react-native-reanimated": "^3.16.2",
+    "react-native-safe-area-context": "^4.12.0",
     "react-native-screens": "~4.4.0",
     "react-native-svg": "^7.2.1",
     "react-native-svg-charts": "^5.4.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
+<<<<<<< HEAD
     "tailwindcss": "^3.4.17",
     "victory-native": "^41.16.1"
+=======
+    "tailwind-react-native-classnames": "^3.0.1",
+    "tailwindcss": "^3.4.17"
+>>>>>>> 31dc24bbd6c4f8e481af4472b86d36cd3cb9a41e
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@react-native-community/cli": "latest",
     "@types/jest": "^29.5.12",
     "@types/react": "~18.3.12",
     "@types/react-native-svg-charts": "^5.0.16",

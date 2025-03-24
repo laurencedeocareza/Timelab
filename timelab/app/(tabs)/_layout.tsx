@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router";
+<<<<<<< HEAD
 import { Image } from "react-native";
 
 export default function TabLayout() {
@@ -59,6 +60,22 @@ export default function TabLayout() {
           ),
         }}
       />
+=======
+import "../../global.css";
+
+export default function TabLayout() {
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Tabs.Screen name="Home" />
+      <Tabs.Screen name="Tools" />
+      <Tabs.Screen name="Index" />
+      <Tabs.Screen name="Notes" />
+      <Tabs.Screen name="Profile" />
+>>>>>>> 31dc24bbd6c4f8e481af4472b86d36cd3cb9a41e
     </Tabs>
   );
 }
