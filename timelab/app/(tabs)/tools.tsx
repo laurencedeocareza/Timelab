@@ -1,7 +1,14 @@
 import React from "react";
-import { View, Text, TouchableOpacity, SafeAreaView } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  StyleSheet,
+  Dimensions,
+  Image,
+} from "react-native";
 
-// Define types for our tools
 interface Tool {
   id: number;
   title: string;
@@ -11,13 +18,12 @@ interface Tool {
 }
 
 export default function Tools() {
-  // Tool card data
   const tools: Tool[] = [
     {
       id: 1,
       title: "Methods",
-      icon: "list-ul",
-      iconType: "FontAwesome5",
+      icon: "methods", // Updated to reference local image
+      iconType: "image",
       colors: ["#e0e8ff", "#d0d8ff"],
     },
     {
@@ -34,99 +40,163 @@ export default function Tools() {
       iconType: "FontAwesome5",
       colors: ["#e0f0ff", "#d0e8ff"],
     },
-    {
-      id: 4,
-      title: "Set Goals",
-      icon: "bullseye",
-      iconType: "FontAwesome5",
-      colors: ["#e0f0ff", "#d0e8ff"],
-    },
   ];
 
   const renderIcon = (tool: Tool) => {
     if (tool.id === 1) {
+      // Render methods.png image for Methods tool
       return (
-        <View className="w-12 h-12 items-center justify-center">
-          <View className="w-7 h-7 mb-1 rounded-md border-2 border-black items-center justify-center">
-            <View className="w-3 h-3 bg-black rounded-sm" />
-          </View>
-          <View className="w-8 h-2 bg-black rounded-full mb-1" />
-
-          <View className="w-7 h-7 mb-1 rounded-md border-2 border-red-500 items-center justify-center">
-            <View className="w-3 h-3 bg-red-500 rounded-sm" />
-          </View>
-          <View className="w-8 h-2 bg-red-500 rounded-full mb-1" />
-
-          <View className="w-7 h-7 mb-1 rounded-md border-2 border-green-500 items-center justify-center">
-            <View className="w-3 h-3 bg-green-500 rounded-sm" />
-          </View>
-          <View className="w-8 h-2 bg-green-500 rounded-full" />
+        <View style={styles.iconContainer}>
+          <Image
+            source={require("../../assets/images/methods.png")} // Update path as needed
+            style={styles.methodsIcon}
+            resizeMode="contain"
+          />
         </View>
       );
     } else if (tool.id === 2) {
       return (
-        <View className="w-12 h-12 items-center justify-center">
-          <View className="w-8 h-8 bg-yellow-300 rounded-full" />
-          <View className="absolute right-1 top-1">
-            <Text className="text-blue-400 text-sm font-bold">z</Text>
-            <Text className="text-blue-400 text-lg font-bold ml-2">z</Text>
-            <Text className="text-blue-400 text-sm font-bold ml-4">z</Text>
+        <View style={styles.iconContainer}>
+          <View style={styles.moonIcon} />
+          <View style={styles.zContainer}>
+            <Text style={styles.zText}>z</Text>
+            <Text style={[styles.zText, styles.zTextLarge]}>z</Text>
+            <Text style={styles.zText}>z</Text>
           </View>
         </View>
       );
     } else if (tool.id === 3) {
       return (
-        <View className="w-12 h-12 items-center justify-center flex-row">
-          <View className="w-1.5 h-6 bg-pink-400 rounded-full mx-0.5" />
-          <View className="w-1.5 h-8 bg-pink-500 rounded-full mx-0.5" />
-          <View className="w-1.5 h-4 bg-purple-400 rounded-full mx-0.5" />
-          <View className="w-1.5 h-7 bg-purple-500 rounded-full mx-0.5" />
-          <View className="w-1.5 h-5 bg-pink-400 rounded-full mx-0.5" />
-        </View>
-      );
-    } else if (tool.id === 4) {
-      return (
-        <View className="w-12 h-12 items-center justify-center">
-          <View className="w-10 h-10 bg-white rounded-full items-center justify-center">
-            <View className="w-8 h-8 bg-red-500 rounded-full items-center justify-center">
-              <View className="w-6 h-6 bg-white rounded-full items-center justify-center">
-                <View className="w-4 h-4 bg-red-500 rounded-full" />
-              </View>
-            </View>
-          </View>
-          <View className="absolute top-0 right-1 transform rotate-45">
-            <View className="w-8 h-1 bg-blue-400" />
-            <View className="w-1 h-3 bg-blue-400 absolute -top-2 right-0" />
-          </View>
+        <View style={[styles.iconContainer, styles.soundContainer]}>
+          <View
+            style={[
+              styles.soundBar,
+              { height: 24, backgroundColor: "#f472b6" },
+            ]}
+          />
+          <View
+            style={[
+              styles.soundBar,
+              { height: 32, backgroundColor: "#ec4899" },
+            ]}
+          />
+          <View
+            style={[
+              styles.soundBar,
+              { height: 16, backgroundColor: "#a78bfa" },
+            ]}
+          />
+          <View
+            style={[
+              styles.soundBar,
+              { height: 28, backgroundColor: "#8b5cf6" },
+            ]}
+          />
+          <View
+            style={[
+              styles.soundBar,
+              { height: 20, backgroundColor: "#f472b6" },
+            ]}
+          />
         </View>
       );
     }
-
-    // Default return to avoid potential undefined returns
     return null;
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      {/* Tools Title */}
-      <View className="p-6 justify-center items-center">
-        <Text className="text-2xl font-bold text-black">Tools</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Tools</Text>
       </View>
-      {/* Tools Grid */}
-      <View className="flex-row flex-wrap px-4 justify-between">
+
+      <View style={styles.gridContainer}>
         {tools.map((tool) => (
           <TouchableOpacity
             key={tool.id}
-            className="w-[45%] bg-blue-50 rounded-xl mb-6 p-4 items-center"
+            style={[styles.toolCard, { backgroundColor: tool.colors[0] }]}
             activeOpacity={0.7}
           >
             {renderIcon(tool)}
-            <Text className="text-center mt-2 font-medium text-lg">
-              {tool.title}
-            </Text>
+            <Text style={styles.toolTitle}>{tool.title}</Text>
           </TouchableOpacity>
         ))}
       </View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+  },
+  header: {
+    padding: 24,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "black",
+  },
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 16,
+    justifyContent: "space-between",
+  },
+  toolCard: {
+    width: Dimensions.get("window").width * 0.45 - 20,
+    borderRadius: 12,
+    marginBottom: 24,
+    padding: 16,
+    alignItems: "center",
+  },
+  toolTitle: {
+    textAlign: "center",
+    marginTop: 8,
+    fontWeight: "500",
+    fontSize: 18,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  methodsIcon: {
+    width: 40, // Adjust size as needed
+    height: 40,
+  },
+  // Keep all other existing styles
+  moonIcon: {
+    width: 32,
+    height: 32,
+    backgroundColor: "#fbbf24",
+    borderRadius: 16,
+  },
+  zContainer: {
+    position: "absolute",
+    right: 4,
+    top: 4,
+  },
+  zText: {
+    color: "#60a5fa",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  zTextLarge: {
+    fontSize: 18,
+    marginLeft: 8,
+  },
+  soundContainer: {
+    flexDirection: "row",
+  },
+  soundBar: {
+    width: 6,
+    borderRadius: 3,
+    marginHorizontal: 2,
+  },
+});

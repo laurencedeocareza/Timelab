@@ -3,48 +3,36 @@ import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
+  StyleSheet,
+  Dimensions,
+  Animated,
 } from "react-native";
 
-interface Task {
-  id: number;
-  name: string;
-  duration: number;
-  priority: string;
-}
-
-export default function Pomodoro() {
-  // Initial timer state
-  const [timeLeft, setTimeLeft] = useState<number>(25 * 60); // 25 minutes in seconds
-  const [isRunning, setIsRunning] = useState<boolean>(false);
-
-  // Task list
-  const tasks: Task[] = [
-    { id: 1, name: "task name", duration: 1500, priority: "High" },
-    { id: 2, name: "task name", duration: 1500, priority: "High" },
-    { id: 3, name: "task name", duration: 1500, priority: "High" },
-  ];
+export default function PomodoroTimer() {
+  const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes
+  const [isRunning, setIsRunning] = useState(false);
+  const progressAnim = React.useRef(new Animated.Value(0)).current;
 
   // Timer logic
   useEffect(() => {
-    let interval: NodeJS.Timeout | undefined = undefined;
-
+    let interval: NodeJS.Timeout;
     if (isRunning && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prevTime) => prevTime - 1);
-      }, 1000);
-    } else if (timeLeft === 0) {
-      setIsRunning(false);
+      interval = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
     }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [isRunning, timeLeft]);
 
-  // Format time as mm:ss
-  const formatTime = (seconds: number): string => {
+  // Animate progress
+  useEffect(() => {
+    const progress = 1 - timeLeft / (25 * 60);
+    Animated.timing(progressAnim, {
+      toValue: progress,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [timeLeft]);
+
+  const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs
@@ -52,108 +40,166 @@ export default function Pomodoro() {
       .padStart(2, "0")}`;
   };
 
-  // Toggle timer start/stop
-  const toggleTimer = (): void => {
-    setIsRunning(!isRunning);
-  };
-
-  // Calculate progress circle values
-  const totalTime = 25 * 60;
-  const percentage = (timeLeft / totalTime) * 100;
-
-  // SVG circle parameters
-  const size = 200;
-  const strokeWidth = 15;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference * (1 - percentage / 100);
-  const center = size / 2;
-
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      {/* Header with back button */}
-      <View className="flex-row items-center p-4 border-b border-gray-200">
-        <TouchableOpacity className="p-2">
-          <View className="w-6 h-6 bg-blue-500 rounded-sm flex items-center justify-center">
-            <Text className="text-white font-bold">&lt;</Text>
-          </View>
-        </TouchableOpacity>
-        <Text className="text-xl font-semibold ml-4">Pomodoro</Text>
+    <View style={styles.container}>
+      {/* Header */}
+      <Text style={styles.header}>Pomodoro</Text>
+
+      {/* Timer Display - Using View instead of SVG */}
+      <View style={styles.timerContainer}>
+        <View style={styles.circleBackground} />
+        <Animated.View
+          style={[
+            styles.circleProgress,
+            {
+              transform: [
+                {
+                  rotate: progressAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ["0deg", "360deg"],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
+        <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
       </View>
 
-      {/* Timer Circle */}
-      <View className="items-center justify-center py-10">
-        <View className="relative w-52 h-52 items-center justify-center">
-          <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-            {/* Background Circle (Gray) */}
-            <circle
-              cx={center}
-              cy={center}
-              r={radius}
-              stroke="#E5E5E5"
-              strokeWidth={strokeWidth}
-              fill="transparent"
-            />
+      {/* Tasks Section (unchanged) */}
+      <Text style={styles.sectionTitle}>Tasks</Text>
 
-            {/* Progress Circle (Blue) */}
-            <circle
-              cx={center}
-              cy={center}
-              r={radius}
-              stroke="#0096FF"
-              strokeWidth={strokeWidth}
-              fill="transparent"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              transform={`rotate(-90 ${center} ${center})`}
-              strokeLinecap="round"
-            />
-          </svg>
-
-          {/* Timer Text */}
-          <Text className="absolute text-4xl font-bold">
-            {formatTime(timeLeft)}
-          </Text>
+      <View style={styles.taskList}>
+        <View style={styles.taskItem}>
+          <Text style={styles.taskText}>Design review</Text>
+          <View style={[styles.priorityBadge, styles.highPriority]}>
+            <Text style={styles.priorityText}>High</Text>
+          </View>
+        </View>
+        <View style={styles.taskItem}>
+          <Text style={styles.taskText}>Code refactor</Text>
+          <View style={[styles.priorityBadge, styles.mediumPriority]}>
+            <Text style={styles.priorityText}>Medium</Text>
+          </View>
+        </View>
+        <View style={styles.taskItem}>
+          <Text style={styles.taskText}>Team meeting</Text>
+          <View style={[styles.priorityBadge, styles.lowPriority]}>
+            <Text style={styles.priorityText}>Low</Text>
+          </View>
         </View>
       </View>
 
-      {/* Tasks Header */}
-      <Text className="text-xl font-semibold px-6 mb-2">Tasks</Text>
-
-      {/* Tasks List */}
-      <ScrollView className="px-6">
-        {tasks.map((task) => (
-          <View
-            key={task.id}
-            className="flex-row items-center bg-gray-200 rounded-lg p-4 mb-3"
-          >
-            <View className="h-6 w-6 rounded-full bg-gray-400 mr-3 items-center justify-center">
-              <Text className="text-white text-xs">○</Text>
-            </View>
-            <View className="flex-1">
-              <Text className="text-sm">{task.name}</Text>
-              <Text className="text-xs text-gray-500">
-                {task.duration} mins
-              </Text>
-            </View>
-            <View className="bg-red-500 px-3 py-1 rounded-md">
-              <Text className="text-white text-xs font-medium">
-                {task.priority}
-              </Text>
-            </View>
-          </View>
-        ))}
-      </ScrollView>
-
-      {/* Bottom Play Button */}
-      <View className="items-center mb-8 mt-4">
-        <TouchableOpacity
-          onPress={toggleTimer}
-          className="w-14 h-14 rounded-full bg-blue-500 items-center justify-center"
-        >
-          <Text className="text-white text-xl">{isRunning ? "❚❚" : "▶"}</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+      {/* Control Button */}
+      <TouchableOpacity
+        style={styles.controlButton}
+        onPress={() => setIsRunning(!isRunning)}
+      >
+        <Text style={styles.controlButtonText}>
+          {isRunning ? "PAUSE" : "START"}
+        </Text>
+      </TouchableOpacity>
+    </View>
   );
 }
+
+const CIRCLE_SIZE = 200;
+const CIRCLE_THICKNESS = 10;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#FFF",
+    paddingHorizontal: 24,
+    paddingTop: 40,
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: "600",
+    marginBottom: 32,
+    textAlign: "center",
+  },
+  timerContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 40,
+    height: CIRCLE_SIZE,
+  },
+  circleBackground: {
+    width: CIRCLE_SIZE,
+    height: CIRCLE_SIZE,
+    borderRadius: CIRCLE_SIZE / 2,
+    borderWidth: CIRCLE_THICKNESS,
+    borderColor: "#E5E7EB",
+    position: "absolute",
+  },
+  circleProgress: {
+    width: CIRCLE_SIZE,
+    height: CIRCLE_SIZE,
+    borderRadius: CIRCLE_SIZE / 2,
+    borderWidth: CIRCLE_THICKNESS,
+    borderColor: "#3B82F6",
+    position: "absolute",
+    borderLeftColor: "transparent",
+    borderBottomColor: "transparent",
+    borderRightColor: "#3B82F6",
+    borderTopColor: "#3B82F6",
+    transform: [{ rotate: "0deg" }],
+  },
+  timerText: {
+    fontSize: 36,
+    fontWeight: "300",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 16,
+    color: "#374151",
+  },
+  taskList: {
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+  },
+  taskItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  taskText: {
+    fontSize: 16,
+    color: "#111827",
+  },
+  priorityBadge: {
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  highPriority: {
+    backgroundColor: "#FEE2E2",
+  },
+  mediumPriority: {
+    backgroundColor: "#FEF3C7",
+  },
+  lowPriority: {
+    backgroundColor: "#D1FAE5",
+  },
+  priorityText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  controlButton: {
+    backgroundColor: "#3B82F6",
+    borderRadius: 8,
+    padding: 16,
+    alignItems: "center",
+    marginTop: 32,
+  },
+  controlButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+});

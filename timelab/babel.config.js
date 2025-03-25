@@ -1,11 +1,11 @@
 module.exports = {
-  presets: ['babel-preset-expo'],
+  presets: ["babel-preset-expo"],
   plugins: [
     [
-      'module-resolver',
+      "module-resolver",
       {
         alias: {
-          '@': './', // Match the alias defined in tsconfig.json
+          "@": "./", // Match the alias defined in tsconfig.json
         },
       },
     ],
