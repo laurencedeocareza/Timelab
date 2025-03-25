@@ -5,6 +5,8 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
+  Platform,
+  StyleSheet,
 } from "react-native";
 
 // Define types for our data
@@ -41,10 +43,8 @@ export default function HomeScreen() {
     { id: 12, name: "December", shortName: "DEC", tasks: 44 },
   ];
 
-  // Weekly data for dropdown
   const weeks: string[] = ["Week 1", "Week 2", "Week 3", "Week 4"];
 
-  // Stats data for bar chart
   const dailyStats: DailyStats[] = [
     { day: "Sunday", tasksFinished: 5, otherTasks: 3 },
     { day: "Monday", tasksFinished: 8, otherTasks: 4 },
@@ -55,79 +55,63 @@ export default function HomeScreen() {
     { day: "Saturday", tasksFinished: 5, otherTasks: 2 },
   ];
 
-  const toggleDropdown = () => {
-    setDropdownOpen(!dropdownOpen);
-  };
-
+  const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
   const selectWeek = (week: string) => {
     setSelectedWeek(week);
     setDropdownOpen(false);
   };
 
   const renderMonthCard = ({ item }: { item: MonthData }) => (
-    <View className="w-36 mr-4 bg-red-300 rounded-lg p-4">
-      <Text className="text-base">{item.name}</Text>
-      <Text className="text-6xl font-bold my-3">{item.tasks}</Text>
-      <Text className="text-5xl font-thin text-gray-600 opacity-30 absolute top-10 right-4">
-        {item.shortName}
-      </Text>
-      <Text className="text-sm">Tasks completed</Text>
+    <View style={styles.monthCard}>
+      <Text style={styles.monthName}>{item.name}</Text>
+      <Text style={styles.taskCount}>{item.tasks}</Text>
+      <Text style={styles.monthShort}>{item.shortName}</Text>
+      <Text style={styles.taskText}>Tasks completed</Text>
     </View>
   );
 
-  // Function to determine the width of bar segments
   const getBarWidth = (value: number): number => {
-    // Maximum possible width (adjust as needed)
-    const maxWidth = 200;
-    // Assuming maximum value would be around 15 tasks
+    const maxWidth = Platform.OS === "web" ? 300 : 200; // Adjust max width for web
     const scaleFactor = maxWidth / 15;
     return value * scaleFactor;
   };
 
   return (
-    <View className="flex-1 bg-white">
-      {/* Header */}
-      <View className="w-full p-4 border-b border-gray-200">
-        <Text className="text-2xl font-bold text-center">Home</Text>
-      </View>
-
+    <View style={styles.container}>
       {/* Monthly Scrollable Cards */}
-      <View className="mt-4">
-        <FlatList
-          data={months}
-          renderItem={renderMonthCard}
-          keyExtractor={(item) => item.id.toString()}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16 }}
-        />
-      </View>
+      <FlatList
+        data={months}
+        renderItem={renderMonthCard}
+        keyExtractor={(item) => item.id.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          alignItems: "flex-start",
+        }} // Make sure it aligns properly
+        style={{ flexGrow: 0 }}
+      />
 
       {/* Statistics Section */}
-      <View className="mt-6 bg-gray-100 flex-1">
-        <View className="p-4 border-b border-gray-200">
-          <Text className="text-xl font-bold text-center">Statistics</Text>
-        </View>
+      <View style={styles.statisticsContainer}>
+        <Text style={styles.statisticsTitle}>Statistics</Text>
 
         {/* Week Dropdown */}
-        <View className="p-4">
-          <TouchableOpacity
-            onPress={toggleDropdown}
-            className="border border-gray-800 rounded p-2 flex-row justify-between items-center"
-          >
-            <Text className="text-lg">{selectedWeek}</Text>
+        <View style={styles.dropdownContainer}>
+          <TouchableOpacity onPress={toggleDropdown} style={styles.dropdown}>
+            <Text style={styles.dropdownText}>{selectedWeek}</Text>
             <Text>▼</Text>
           </TouchableOpacity>
 
           {dropdownOpen && (
-            <View className="mt-2 border border-gray-800 rounded bg-white">
+            <View style={styles.dropdownMenu}>
               {weeks.map((week, index) => (
                 <TouchableOpacity
                   key={index}
                   onPress={() => selectWeek(week)}
-                  className="p-2 border-b border-gray-300"
+                  style={styles.dropdownItem}
                 >
-                  <Text className="text-lg">{week}</Text>
+                  <Text>{week}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -135,25 +119,37 @@ export default function HomeScreen() {
         </View>
 
         {/* Bar Chart */}
-        <View className="mt-4 p-2">
+        <View style={styles.chartContainer}>
           {dailyStats.map((stat, index) => (
-            <View key={index} className="flex-row items-center mb-3">
-              <Text className="w-24 text-right mr-2">{stat.day}</Text>
-              <View className="flex-row">
-                {/* Purple bar segment */}
+            <View key={index} style={styles.chartRow}>
+              <Text style={styles.dayText}>{stat.day}</Text>
+              <View style={styles.barContainer}>
                 <View
-                  style={{ width: getBarWidth(stat.otherTasks) }}
-                  className="h-6 bg-purple-400 mr-0.5"
+                  style={[
+                    styles.barSegment,
+                    {
+                      width: getBarWidth(stat.otherTasks),
+                      backgroundColor: "#A78BFA",
+                    },
+                  ]}
                 />
-                {/* Red bar segment */}
                 <View
-                  style={{ width: getBarWidth(stat.otherTasks + 2) }}
-                  className="h-6 bg-red-300 mr-0.5"
+                  style={[
+                    styles.barSegment,
+                    {
+                      width: getBarWidth(stat.otherTasks + 2),
+                      backgroundColor: "#F87171",
+                    },
+                  ]}
                 />
-                {/* Blue bar segment */}
                 <View
-                  style={{ width: getBarWidth(stat.tasksFinished) }}
-                  className="h-6 bg-blue-400"
+                  style={[
+                    styles.barSegment,
+                    {
+                      width: getBarWidth(stat.tasksFinished),
+                      backgroundColor: "#60A5FA",
+                    },
+                  ]}
                 />
               </View>
             </View>
@@ -161,21 +157,104 @@ export default function HomeScreen() {
         </View>
 
         {/* Legend */}
-        <View className="flex-row justify-end mt-2">
-          <View className="flex-row items-center mr-4">
-            <View className="w-4 h-4 bg-blue-400 mr-1" />
-            <Text className="text-xs">Tasks Finished</Text>
+        <View style={styles.legendContainer}>
+          <View style={styles.legendItem}>
+            <View
+              style={[styles.legendColor, { backgroundColor: "#60A5FA" }]}
+            />
+            <Text>Tasks Finished</Text>
           </View>
-          <View className="flex-row items-center mr-4">
-            <View className="w-4 h-4 bg-red-300 mr-1" />
-            <Text className="text-xs">In Progress</Text>
+          <View style={styles.legendItem}>
+            <View
+              style={[styles.legendColor, { backgroundColor: "#F87171" }]}
+            />
+            <Text>In Progress</Text>
           </View>
-          <View className="flex-row items-center">
-            <View className="w-4 h-4 bg-purple-400 mr-1" />
-            <Text className="text-xs">Paused</Text>
+          <View style={styles.legendItem}>
+            <View
+              style={[styles.legendColor, { backgroundColor: "#A78BFA" }]}
+            />
+            <Text>Paused</Text>
           </View>
         </View>
       </View>
     </View>
   );
 }
+
+// Styles
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff" },
+  header: { padding: 16, borderBottomWidth: 1, borderBottomColor: "#ddd" },
+  headerTitle: { fontSize: 22, fontWeight: "bold", textAlign: "center" },
+
+  monthList: { paddingHorizontal: 16, paddingVertical: 10 },
+
+  monthCard: {
+    height: 200,
+    width: 140,
+    backgroundColor: "#FCA5A5",
+    borderRadius: 8,
+    padding: 12,
+    marginRight: 12,
+    shadowColor: "#000", // Added shadow for depth
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  dropdownText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  monthName: { fontSize: 16, fontWeight: "bold" },
+  taskCount: { fontSize: 32, fontWeight: "bold", marginVertical: 6 },
+  monthShort: {
+    fontSize: 30,
+    color: "#999",
+    position: "absolute",
+    top: 10,
+    right: 10,
+  },
+  taskText: { fontSize: 12 },
+
+  statisticsContainer: { flex: 1, backgroundColor: "#F3F4F6", padding: 16 },
+  statisticsTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+
+  dropdownContainer: { marginBottom: 12 },
+  dropdown: {
+    borderWidth: 1,
+    padding: 8,
+    borderRadius: 6,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  dropdownMenu: { borderWidth: 1, backgroundColor: "#fff", marginTop: 4 },
+  dropdownItem: { padding: 8, borderBottomWidth: 1 },
+
+  chartContainer: { marginTop: 10 },
+  chartRow: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
+  dayText: { width: 80, textAlign: "right", marginRight: 8 },
+  barContainer: { flexDirection: "row" },
+  barSegment: { height: 20 },
+
+  legendContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 10,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 6,
+  },
+  legendColor: { width: 10, height: 10, marginRight: 4 },
+});

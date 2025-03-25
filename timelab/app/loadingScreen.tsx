@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useLayoutEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { View, Text, Image, StyleSheet, Animated, TouchableOpacity } from 'react-native';
+import { View, Text, Image, Animated, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router'; // Import useRouter
-
+import tw from 'tailwind-react-native-classnames'; // Import Tailwind for styling
 
 const LoadingScreen = () => {
   const router = useRouter(); // Initialize router
@@ -12,11 +12,12 @@ const LoadingScreen = () => {
   const scale = useRef(new Animated.Value(0.8)).current; // For scaling effect
   const buttonOpacity = useRef(new Animated.Value(0)).current; // For button fade-in
   const navigation = useNavigation();
- // Hide the header dynamically
-   useLayoutEffect(() => {
-     navigation.setOptions({ headerShown: false });
-   }, [navigation]);
- 
+
+  // Hide the header dynamically
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
   useEffect(() => {
     // Sequence of animations
     Animated.sequence([
@@ -62,15 +63,17 @@ const LoadingScreen = () => {
   return (
     <Animated.View
       style={[
-        styles.container,
+        tw`flex-1 justify-center items-center`,
         { backgroundColor: interpolatedBackgroundColor },
       ]}
     >
       <Animated.Image
         source={require('../assets/images/timeLabLogo.png')} // Replace with your logo path
         style={[
-          styles.logo,
+          tw`mb-2`,
           {
+            width: 350, // Tailwind doesn't support dynamic width/height directly
+            height: 350,
             opacity: logoOpacity,
             transform: [{ scale }],
           },
@@ -78,44 +81,14 @@ const LoadingScreen = () => {
       />
       <Animated.View style={{ opacity: buttonOpacity }}>
         <TouchableOpacity
-          style={styles.button}
+          style={tw`bg-blue-500 py-2 px-6 rounded`}
           onPress={() => router.push('/userInfo')} // Navigate to the userInfo page
         >
-          <Text style={styles.buttonText}>Get Started!</Text>
+          <Text style={tw`text-white text-base font-bold`}>Get Started!</Text>
         </TouchableOpacity>
       </Animated.View>
     </Animated.View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logo: {
-    width: 350,
-    height: 350,
-    marginBottom: 10,
-  },
-  text: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#007AFF', // Adjust to match your design
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});
 
 export default LoadingScreen;

@@ -1,18 +1,18 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "expo/tsconfig.base", // Ensure this file exists in your node_modules
   "compilerOptions": {
     "strict": true,
     "paths": {
       "@/*": [
-        "./*"
+        "./*" // Ensure this alias is supported by your environment
       ]
     }
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts",
-    "nativewind-env.d.ts"
+    "**/*.ts", // Include all TypeScript files
+    "**/*.tsx", // Include all TSX files
+    ".expo/types/**/*.ts", // Ensure this path exists
+    "expo-env.d.ts", // Ensure this file exists
+    "nativewind-env.d.ts" // Ensure this file exists
   ]
 }
