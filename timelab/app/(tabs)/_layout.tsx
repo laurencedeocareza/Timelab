@@ -4,59 +4,57 @@ import "../../global.css";
 
 export default function TabLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false, // Hide headers globally
-      }}
-    >
+    <Tabs>
       {/* Home Tab */}
-      <Tabs.Screen
-        name="index"
+      <Tabs.Screen 
+        name="index" 
         options={{
           title: "Home",
           tabBarIcon: ({ color, size }) => (
-            <Image
-              source={require("../../assets/images/home.png")}
+            <Image 
+              source={require('../../assets/images/home.png')} 
               style={{ width: size, height: size, tintColor: color }}
             />
           ),
         }}
       />
-      z``
+
       {/* Methods Tab */}
-      <Tabs.Screen
-        name="methods"
+      <Tabs.Screen 
+        name="methods" 
         options={{
           title: "Methods",
           tabBarIcon: ({ color, size }) => (
-            <Image
-              source={require("../../assets/images/method.png")}
+            <Image 
+              source={require('../../assets/images/method.png')} 
               style={{ width: size, height: size, tintColor: color }}
             />
           ),
         }}
       />
+
       {/* Tools Tab */}
-      <Tabs.Screen
-        name="tools"
+      <Tabs.Screen 
+        name="tools" 
         options={{
           title: "Tools",
           tabBarIcon: ({ color, size }) => (
-            <Image
-              source={require("../../assets/images/tools.png")}
+            <Image 
+              source={require('../../assets/images/tools.png')} 
               style={{ width: size, height: size, tintColor: color }}
             />
           ),
         }}
       />
+
       {/* Profile Tab */}
-      <Tabs.Screen
-        name="profile"
+      <Tabs.Screen 
+        name="profile" 
         options={{
           title: "Profile",
           tabBarIcon: ({ color, size }) => (
-            <Image
-              source={require("../../assets/images/profile.png")}
+            <Image 
+              source={require('../../assets/images/profile.png')} 
               style={{ width: size, height: size, tintColor: color }}
             />
           ),

@@ -19,12 +19,7 @@ const UserInfo = () => {
   }, [navigation]);
 
   const handleSubmit = () => {
-    if (!firstName || !lastName || !email) {
-      Alert.alert('Error', 'Please fill out all fields.');
-      return;
-    }
-    Alert.alert('Success', `Welcome, ${firstName} ${lastName}!`);
-    navigation.navigate('userAccount'); // Navigate to the userAccount screen
+    navigation.navigate('userAccount'); // Directly navigate to the userAccount screen
   };
 
   return (

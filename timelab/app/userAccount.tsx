@@ -20,20 +20,7 @@ const UserAccount = () => {
   }, [navigation]);
 
   const handleSignUp = () => {
-    if (!username || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill out all fields.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match.');
-      return;
-    }
-    if (!isChecked) {
-      Alert.alert('Error', 'You must agree to the Terms and Conditions.');
-      return;
-    }
-    Alert.alert('Success', 'Account created successfully!');
-    navigation.navigate('welcomePage'); // Navigate to the welcomePage
+    navigation.navigate('welcomePage'); // Directly navigate to the welcomePage
   };
 
   return (
