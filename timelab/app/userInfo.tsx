@@ -12,7 +12,6 @@ const UserInfo = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
- 
 
   useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
@@ -23,49 +22,49 @@ const UserInfo = () => {
   };
 
   return (
-    <View style={tw`flex-1 bg-white`}>
+    <View style={tw`flex-1 bg-gray-50`}>
       {/* Header */}
-      <View style={tw`w-full bg-blue-500 py-4 items-center`}>
-        <Text style={tw`text-white text-lg font-bold`}>LET US KNOW YOU</Text>
+      <View style={tw`w-full bg-blue-500 py-6 items-center shadow-md`}>
+        <Text style={tw`text-white text-xl font-bold`}>Let Us Know You</Text>
       </View>
 
       {/* Main Content */}
-      <View style={tw`flex-1 items-center px-5 py-4`}>
+      <View style={tw`flex-1 items-center px-6 py-8`}>
+        {/* Icon */}
         <Image
           source={require('../assets/images/userInfoIcon.png')} // Replace with your icon path
-          style={tw`w-24 h-24 mb-5`}
+          style={tw`w-28 h-28 mb-6`}
         />
+
+        {/* Input Fields */}
         <TextInput
-          style={tw`w-full border border-gray-300 rounded px-3 py-2 mb-4 text-base`}
+          style={tw`w-full border border-gray-300 rounded-lg px-4 py-3 mb-4 bg-white text-base shadow-sm`}
           placeholder="First Name"
           value={firstName}
           onChangeText={setFirstName}
         />
         <TextInput
-          style={tw`w-full border border-gray-300 rounded px-3 py-2 mb-4 text-base`}
+          style={tw`w-full border border-gray-300 rounded-lg px-4 py-3 mb-4 bg-white text-base shadow-sm`}
           placeholder="Last Name"
           value={lastName}
           onChangeText={setLastName}
         />
         <TextInput
-          style={tw`w-full border border-gray-300 rounded px-3 py-2 mb-4 text-base`}
+          style={tw`w-full border border-gray-300 rounded-lg px-4 py-3 mb-6 bg-white text-base shadow-sm`}
           placeholder="Email"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
         />
-        <TouchableOpacity style={tw`bg-blue-500 py-2 px-6 rounded`} onPress={handleSubmit}>
-          <Text style={tw`text-white text-base font-bold`}>Submit</Text>
+
+        {/* Submit Button */}
+        <TouchableOpacity
+          style={tw`bg-blue-500 py-3 px-8 rounded-full shadow-lg`}
+          onPress={handleSubmit}
+        >
+          <Text style={tw`text-white text-lg font-bold`}>Submit</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Back Button */}
-      <TouchableOpacity style={tw`absolute bottom-8 left-5`} onPress={() => navigation.goBack()}>
-        <Image
-          source={require('../assets/images/backbtn.png')} // Replace with your back button icon path
-          style={tw`w-8 h-8`}
-        />
-      </TouchableOpacity>
     </View>
   );
 };

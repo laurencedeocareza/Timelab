@@ -2,12 +2,11 @@ import React, { useState } from "react";
 import {
   Text,
   View,
-  ScrollView,
-  TouchableOpacity,
   FlatList,
+  TouchableOpacity,
   Platform,
-  StyleSheet,
 } from "react-native";
+import tw from "tailwind-react-native-classnames"; // Import Tailwind for styling
 
 // Define types for our data
 interface MonthData {
@@ -62,11 +61,13 @@ export default function HomeScreen() {
   };
 
   const renderMonthCard = ({ item }: { item: MonthData }) => (
-    <View style={styles.monthCard}>
-      <Text style={styles.monthName}>{item.name}</Text>
-      <Text style={styles.taskCount}>{item.tasks}</Text>
-      <Text style={styles.monthShort}>{item.shortName}</Text>
-      <Text style={styles.taskText}>Tasks completed</Text>
+    <View
+      style={tw`bg-blue-100 w-36 h-48 rounded-lg p-4 mr-4 shadow-md justify-between`}
+    >
+      <Text style={tw`text-lg font-bold text-gray-800`}>{item.name}</Text>
+      <Text style={tw`text-4xl font-extrabold text-blue-500`}>{item.tasks}</Text>
+      <Text style={tw`text-sm text-gray-500`}>{item.shortName}</Text>
+      <Text style={tw`text-xs text-gray-600`}>Tasks completed</Text>
     </View>
   );
 
@@ -77,7 +78,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={tw`flex-1 bg-gray-50`}>
       {/* Monthly Scrollable Cards */}
       <FlatList
         data={months}
@@ -85,33 +86,36 @@ export default function HomeScreen() {
         keyExtractor={(item) => item.id.toString()}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          alignItems: "flex-start",
-        }} // Make sure it aligns properly
-        style={{ flexGrow: 0 }}
+        contentContainerStyle={tw`px-4 py-6`}
       />
 
       {/* Statistics Section */}
-      <View style={styles.statisticsContainer}>
-        <Text style={styles.statisticsTitle}>Statistics</Text>
+      <View style={tw`bg-white rounded-t-3xl p-6 shadow-lg`}>
+        <Text style={tw`text-xl font-bold text-gray-800 mb-4 text-center`}>
+          Statistics
+        </Text>
 
         {/* Week Dropdown */}
-        <View style={styles.dropdownContainer}>
-          <TouchableOpacity onPress={toggleDropdown} style={styles.dropdown}>
-            <Text style={styles.dropdownText}>{selectedWeek}</Text>
-            <Text>▼</Text>
+        <View style={tw`mb-4`}>
+          <TouchableOpacity
+            onPress={toggleDropdown}
+            style={tw`border border-gray-300 rounded-lg px-4 py-2 flex-row justify-between items-center`}
+          >
+            <Text style={tw`text-base font-medium text-gray-800`}>
+              {selectedWeek}
+            </Text>
+            <Text style={tw`text-gray-500`}>▼</Text>
           </TouchableOpacity>
 
           {dropdownOpen && (
-            <View style={styles.dropdownMenu}>
+            <View style={tw`border border-gray-300 bg-white rounded-lg mt-2`}>
               {weeks.map((week, index) => (
                 <TouchableOpacity
                   key={index}
                   onPress={() => selectWeek(week)}
-                  style={styles.dropdownItem}
+                  style={tw`px-4 py-2 border-b border-gray-200`}
                 >
-                  <Text>{week}</Text>
+                  <Text style={tw`text-base text-gray-800`}>{week}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -119,14 +123,14 @@ export default function HomeScreen() {
         </View>
 
         {/* Bar Chart */}
-        <View style={styles.chartContainer}>
+        <View>
           {dailyStats.map((stat, index) => (
-            <View key={index} style={styles.chartRow}>
-              <Text style={styles.dayText}>{stat.day}</Text>
-              <View style={styles.barContainer}>
+            <View key={index} style={tw`flex-row items-center mb-4`}>
+              <Text style={tw`w-20 text-sm text-gray-800`}>{stat.day}</Text>
+              <View style={tw`flex-row flex-1`}>
                 <View
                   style={[
-                    styles.barSegment,
+                    tw`h-4 rounded-l-lg`,
                     {
                       width: getBarWidth(stat.otherTasks),
                       backgroundColor: "#A78BFA",
@@ -135,7 +139,7 @@ export default function HomeScreen() {
                 />
                 <View
                   style={[
-                    styles.barSegment,
+                    tw`h-4`,
                     {
                       width: getBarWidth(stat.otherTasks + 2),
                       backgroundColor: "#F87171",
@@ -144,7 +148,7 @@ export default function HomeScreen() {
                 />
                 <View
                   style={[
-                    styles.barSegment,
+                    tw`h-4 rounded-r-lg`,
                     {
                       width: getBarWidth(stat.tasksFinished),
                       backgroundColor: "#60A5FA",
@@ -157,104 +161,21 @@ export default function HomeScreen() {
         </View>
 
         {/* Legend */}
-        <View style={styles.legendContainer}>
-          <View style={styles.legendItem}>
-            <View
-              style={[styles.legendColor, { backgroundColor: "#60A5FA" }]}
-            />
-            <Text>Tasks Finished</Text>
+        <View style={tw`flex-row justify-center mt-4`}>
+          <View style={tw`flex-row items-center mr-4`}>
+            <View style={tw`w-4 h-4 bg-blue-500 rounded-full mr-2`} />
+            <Text style={tw`text-sm text-gray-800`}>Tasks Finished</Text>
           </View>
-          <View style={styles.legendItem}>
-            <View
-              style={[styles.legendColor, { backgroundColor: "#F87171" }]}
-            />
-            <Text>In Progress</Text>
+          <View style={tw`flex-row items-center mr-4`}>
+            <View style={tw`w-4 h-4 bg-red-400 rounded-full mr-2`} />
+            <Text style={tw`text-sm text-gray-800`}>In Progress</Text>
           </View>
-          <View style={styles.legendItem}>
-            <View
-              style={[styles.legendColor, { backgroundColor: "#A78BFA" }]}
-            />
-            <Text>Paused</Text>
+          <View style={tw`flex-row items-center`}>
+            <View style={tw`w-4 h-4 bg-purple-400 rounded-full mr-2`} />
+            <Text style={tw`text-sm text-gray-800`}>Paused</Text>
           </View>
         </View>
       </View>
     </View>
   );
 }
-
-// Styles
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  header: { padding: 16, borderBottomWidth: 1, borderBottomColor: "#ddd" },
-  headerTitle: { fontSize: 22, fontWeight: "bold", textAlign: "center" },
-
-  monthList: { paddingHorizontal: 16, paddingVertical: 10 },
-
-  monthCard: {
-    height: 200,
-    width: 140,
-    backgroundColor: "#FCA5A5",
-    borderRadius: 8,
-    padding: 12,
-    marginRight: 12,
-    shadowColor: "#000", // Added shadow for depth
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  dropdownText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  monthName: { fontSize: 16, fontWeight: "bold" },
-  taskCount: { fontSize: 32, fontWeight: "bold", marginVertical: 6 },
-  monthShort: {
-    fontSize: 30,
-    color: "#999",
-    position: "absolute",
-    top: 10,
-    right: 10,
-  },
-  taskText: { fontSize: 12 },
-
-  statisticsContainer: { flex: 1, backgroundColor: "#F3F4F6", padding: 16 },
-  statisticsTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-
-  dropdownContainer: { marginBottom: 12 },
-  dropdown: {
-    borderWidth: 1,
-    padding: 8,
-    borderRadius: 6,
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  dropdownMenu: { borderWidth: 1, backgroundColor: "#fff", marginTop: 4 },
-  dropdownItem: { padding: 8, borderBottomWidth: 1 },
-
-  chartContainer: { marginTop: 10 },
-  chartRow: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
-  dayText: { width: 80, textAlign: "right", marginRight: 8 },
-  barContainer: { flexDirection: "row" },
-  barSegment: { height: 20 },
-
-  legendContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 10,
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginHorizontal: 6,
-  },
-  legendColor: { width: 10, height: 10, marginRight: 4 },
-});

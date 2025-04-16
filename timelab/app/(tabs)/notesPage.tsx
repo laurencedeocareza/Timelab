@@ -103,7 +103,7 @@ const NotesPage = () => {
 
   const renderNote = ({ item }: { item: Note }) => (
     <View
-      style={tw`bg-white border border-gray-200 rounded-lg p-4 mb-4 shadow-sm`}
+      style={tw`bg-white border border-gray-200 rounded-lg p-4 mb-4 shadow-md`}
     >
       <View style={tw`flex-row justify-between items-center mb-2`}>
         <Text style={tw`text-lg font-bold text-gray-800`}>{item.title}</Text>
@@ -153,7 +153,7 @@ const NotesPage = () => {
       {/* Add Note Button */}
       {!isAddingNote && (
         <TouchableOpacity
-          style={tw`bg-blue-500 py-3 px-4 rounded-lg mb-4 flex-row items-center justify-center`}
+          style={tw`bg-blue-500 py-3 px-4 rounded-lg mb-4 flex-row items-center justify-center shadow-md`}
           onPress={() => setIsAddingNote(true)}
         >
           <Ionicons name="add" size={20} color="white" style={tw`mr-2`} />

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useLayoutEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { View, Text, Image, Animated, TouchableOpacity } from 'react-native';
+import { View, Text, Animated, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router'; // Import useRouter
 import tw from 'tailwind-react-native-classnames'; // Import Tailwind for styling
 
@@ -67,24 +67,29 @@ const LoadingScreen = () => {
         { backgroundColor: interpolatedBackgroundColor },
       ]}
     >
+      {/* Logo */}
       <Animated.Image
         source={require('../assets/images/timeLabLogo.png')} // Replace with your logo path
         style={[
-          tw`mb-2`,
+          tw`mb-6`, // Increased spacing for a cleaner look
           {
-            width: 350, // Tailwind doesn't support dynamic width/height directly
-            height: 350,
+            width: 300, // Adjusted size for better proportions
+            height: 300,
             opacity: logoOpacity,
             transform: [{ scale }],
           },
         ]}
       />
+
+     
+
+      {/* Get Started Button */}
       <Animated.View style={{ opacity: buttonOpacity }}>
         <TouchableOpacity
-          style={tw`bg-blue-500 py-2 px-6 rounded`}
+          style={tw`bg-blue-500 py-3 px-8 rounded-full shadow-lg`}
           onPress={() => router.push('/userInfo')} // Navigate to the userInfo page
         >
-          <Text style={tw`text-white text-base font-bold`}>Get Started!</Text>
+          <Text style={tw`text-white text-lg font-bold`}>Get Started!</Text>
         </TouchableOpacity>
       </Animated.View>
     </Animated.View>

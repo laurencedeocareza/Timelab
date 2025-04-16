@@ -4,16 +4,15 @@ import {
   Text,
   TouchableOpacity,
   SafeAreaView,
-  StyleSheet,
-  Dimensions,
   Image,
-  ImageSourcePropType,
+  Dimensions,
 } from "react-native";
+import tw from "tailwind-react-native-classnames";
 
 interface Tool {
   id: number;
   title: string;
-  icon: ImageSourcePropType; // Update type to ImageSourcePropType
+  icon: any; // Updated to match the ImageSourcePropType
   colors: string[];
 }
 
@@ -23,28 +22,28 @@ export default function Tools() {
       id: 1,
       title: "80/20 Rule",
       icon: require("../../assets/images/8020_rule.png"),
-      colors: ["#e0e8ff", "#d0d8ff"],
+      colors: ["bg-blue-100", "bg-blue-200"],
     },
     {
       id: 2,
       title: "Pomodoro",
       icon: require("../../assets/images/pomodoro.png"),
-      colors: ["#e0f0ff", "#d0e8ff"],
+      colors: ["bg-green-100", "bg-green-200"],
     },
     {
       id: 3,
       title: "Custom",
       icon: require("../../assets/images/custom.png"),
-      colors: ["#e0f0ff", "#d0e8ff"],
+      colors: ["bg-yellow-100", "bg-yellow-200"],
     },
   ];
 
   const renderIcon = (tool: Tool) => {
     return (
-      <View style={styles.iconContainer}>
+      <View style={tw`w-12 h-12 items-center justify-center`}>
         <Image
           source={tool.icon}
-          style={styles.toolIcon}
+          style={tw`w-10 h-10`}
           resizeMode="contain"
         />
       </View>
@@ -52,69 +51,31 @@ export default function Tools() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Methods</Text>
+    <SafeAreaView style={tw`flex-1 bg-white`}>
+      {/* Header */}
+      <View style={tw`py-6 justify-center items-center`}>
+        <Text style={tw`text-2xl font-bold text-black`}>Methods</Text>
       </View>
 
-      <View style={styles.gridContainer}>
+      {/* Grid Container */}
+      <View style={tw`flex-row flex-wrap px-4 justify-between`}>
         {tools.map((tool) => (
           <TouchableOpacity
             key={tool.id}
-            style={[styles.toolCard, { backgroundColor: tool.colors[0] }]}
+            style={[
+              tw`rounded-lg mb-6 p-4 items-center`,
+              { width: Dimensions.get("window").width * 0.45 - 20 },
+              tw`${tool.colors[0]}`,
+            ]}
             activeOpacity={0.7}
           >
             {renderIcon(tool)}
-            <Text style={styles.toolTitle}>{tool.title}</Text>
+            <Text style={tw`text-center mt-2 font-medium text-lg`}>
+              {tool.title}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "white",
-  },
-  header: {
-    padding: 24,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "black",
-  },
-  gridContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 16,
-    justifyContent: "space-between",
-  },
-  toolCard: {
-    width: Dimensions.get("window").width * 0.45 - 20,
-    borderRadius: 12,
-    marginBottom: 24,
-    padding: 16,
-    alignItems: "center",
-  },
-  toolTitle: {
-    textAlign: "center",
-    marginTop: 8,
-    fontWeight: "500",
-    fontSize: 18,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  toolIcon: {
-    width: 40,
-    height: 40,
-  },
-});
