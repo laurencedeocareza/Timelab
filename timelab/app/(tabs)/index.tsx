@@ -5,8 +5,11 @@ import {
   FlatList,
   TouchableOpacity,
   Platform,
+  Dimensions,
 } from "react-native";
 import tw from "tailwind-react-native-classnames"; // Import Tailwind for styling
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window"); // Get screen dimensions
 
 // Define types for our data
 interface MonthData {
@@ -62,7 +65,14 @@ export default function HomeScreen() {
 
   const renderMonthCard = ({ item }: { item: MonthData }) => (
     <View
-      style={tw`bg-blue-100 w-36 h-48 rounded-lg p-4 mr-4 shadow-md justify-between`}
+      style={[
+        tw`bg-blue-100 rounded-lg p-4 shadow-md justify-between`,
+        {
+          width: screenWidth * 0.4, // Adjust width based on screen size
+          height: screenHeight * 0.25, // Adjust height based on screen size
+          marginRight: 16,
+        },
+      ]}
     >
       <Text style={tw`text-lg font-bold text-gray-800`}>{item.name}</Text>
       <Text style={tw`text-4xl font-extrabold text-blue-500`}>{item.tasks}</Text>
@@ -72,7 +82,7 @@ export default function HomeScreen() {
   );
 
   const getBarWidth = (value: number): number => {
-    const maxWidth = Platform.OS === "web" ? 300 : 200; // Adjust max width for web
+    const maxWidth = screenWidth * 0.6; // Adjust max width based on screen size
     const scaleFactor = maxWidth / 15;
     return value * scaleFactor;
   };
@@ -90,7 +100,12 @@ export default function HomeScreen() {
       />
 
       {/* Statistics Section */}
-      <View style={tw`bg-white rounded-t-3xl p-6 shadow-lg`}>
+      <View
+        style={[
+          tw`bg-white rounded-t-3xl p-6 shadow-lg`,
+          { paddingBottom: screenHeight * 0.05 }, // Adjust padding dynamically
+        ]}
+      >
         <Text style={tw`text-xl font-bold text-gray-800 mb-4 text-center`}>
           Statistics
         </Text>

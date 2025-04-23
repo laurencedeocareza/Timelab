@@ -6,6 +6,7 @@ import {
   Modal,
   TextInput,
   ScrollView,
+  Alert,
 } from "react-native";
 import tw from "tailwind-react-native-classnames";
 
@@ -27,6 +28,8 @@ export default function TimerCreationScreen() {
     duration: 0,
     priority: "Medium",
   });
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+  const [showDeleteWarning, setShowDeleteWarning] = useState(false);
 
   const handleAddTask = () => {
     if (newTask.name.trim()) {
@@ -36,8 +39,17 @@ export default function TimerCreationScreen() {
     }
   };
 
-  const handleDeleteTask = (taskId: string) => {
-    setTasks(tasks.filter((task) => task.id !== taskId));
+  const confirmDeleteTask = (taskId: string) => {
+    setTaskToDelete(taskId);
+    setShowDeleteWarning(true);
+  };
+
+  const handleDeleteTask = () => {
+    if (taskToDelete) {
+      setTasks(tasks.filter((task) => task.id !== taskToDelete));
+      setTaskToDelete(null);
+      setShowDeleteWarning(false);
+    }
   };
 
   const handleSubmit = () => {
@@ -166,7 +178,7 @@ export default function TimerCreationScreen() {
           </View>
           <TouchableOpacity
             style={tw`bg-red-500 p-2 rounded-lg`}
-            onPress={() => handleDeleteTask(task.id)}
+            onPress={() => confirmDeleteTask(task.id)}
           >
             <Text style={tw`text-white text-sm font-bold`}>Delete</Text>
           </TouchableOpacity>
@@ -242,6 +254,33 @@ export default function TimerCreationScreen() {
                 onPress={handleAddTask}
               >
                 <Text style={tw`text-white font-bold`}>Add Task</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Warning Popup */}
+      <Modal visible={showDeleteWarning} transparent animationType="fade">
+        <View
+          style={tw`flex-1 bg-black bg-opacity-50 justify-center items-center`}
+        >
+          <View style={tw`w-11/12 bg-white rounded-lg p-6 shadow-lg`}>
+            <Text style={tw`text-lg font-bold mb-6 text-center text-gray-800`}>
+              Are you sure you want to delete this task?
+            </Text>
+            <View style={tw`flex-row justify-between`}>
+              <TouchableOpacity
+                style={tw`flex-1 p-3 rounded-lg bg-gray-100 mx-1 items-center`}
+                onPress={() => setShowDeleteWarning(false)}
+              >
+                <Text style={tw`text-gray-600`}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={tw`flex-1 p-3 rounded-lg bg-red-500 mx-1 items-center`}
+                onPress={handleDeleteTask}
+              >
+                <Text style={tw`text-white font-bold`}>Delete</Text>
               </TouchableOpacity>
             </View>
           </View>

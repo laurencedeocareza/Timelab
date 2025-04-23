@@ -19,18 +19,6 @@ const UserAccount = () => {
   }, [navigation]);
 
   const handleSignUp = () => {
-    if (!username || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match.');
-      return;
-    }
-    if (!isChecked) {
-      Alert.alert('Error', 'You must agree to the Terms and Conditions.');
-      return;
-    }
     navigation.navigate('welcomePage'); // Directly navigate to the welcomePage
   };
 
