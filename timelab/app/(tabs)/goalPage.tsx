@@ -1,74 +1,6 @@
-// import React from "react";
-// import { View, Text, TouchableOpacity, FlatList, Image } from "react-native";
-// import { Ionicons } from "@expo/vector-icons"; // For icons
-// import tw from "tailwind-react-native-classnames"; // For styling
+"use client";
 
-// const weeklyGoals = [
-//   { id: "1", name: "Goal Name" },
-//   { id: "2", name: "Goal Name" },
-//   { id: "3", name: "Goal Name" },
-// ];
-
-// const dailyGoals = [
-//   { id: "1", name: "Goal Name", time: "Due: 5:00 PM" },
-//   { id: "2", name: "Goal Name", time: "Due: 6:00 PM" },
-//   { id: "3", name: "Goal Name", time: "Due: 7:00 PM" },
-// ];
-
-// const GoalPage = () => {
-//   return (
-//     <View style={tw`flex-1 bg-white`}>
-//       {/* Weekly Goals Section */}
-//       <Text style={tw`text-lg font-bold text-center mt-4 mb-2`}>
-//         Weekly Goals
-//       </Text>
-//       <FlatList
-//         data={weeklyGoals}
-//         horizontal
-//         keyExtractor={(item) => item.id}
-//         contentContainerStyle={tw`px-4`}
-//         renderItem={({ item }) => (
-//           <View
-//             style={tw`bg-blue-100 w-32 h-32 rounded-lg justify-center items-center mr-4`}
-//           >
-//             <Text style={tw`text-sm font-bold text-center`}>{item.name}</Text>
-//           </View>
-//         )}
-//       />
-
-//       {/* Daily Goals Section */}
-//       <Text style={tw`text-lg font-bold text-center mt-6 mb-2`}>
-//         Daily Goals
-//       </Text>
-//       <FlatList
-//         data={dailyGoals}
-//         keyExtractor={(item) => item.id}
-//         contentContainerStyle={tw`px-4`}
-//         renderItem={({ item }) => (
-//           <View
-//             style={tw`bg-blue-100 rounded-lg p-4 mb-4 flex-row justify-between items-center`}
-//           >
-//             <Text style={tw`text-sm font-bold`}>{item.name}</Text>
-//             <Text style={tw`text-xs text-gray-500`}>{item.time}</Text>
-//             <TouchableOpacity>
-//               <Ionicons name="ellipsis-vertical" size={20} color="gray" />
-//             </TouchableOpacity>
-//           </View>
-//         )}
-//       />
-
-//       {/* New Task Button */}
-//       <TouchableOpacity
-//         style={tw`bg-blue-500 py-3 px-10 rounded absolute bottom-8 self-center`}
-//         onPress={() => console.log("New Task pressed")}
-//       >
-//         <Text style={tw`text-white text-base font-bold`}>New Task</Text>
-//       </TouchableOpacity>
-//     </View>
-//   );
-// };
-
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -76,223 +8,669 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  // Image,
+  FlatList,
+  StyleSheet,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import tw from "tailwind-react-native-classnames";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-interface GoalCardProps {
+const { width } = Dimensions.get("window");
+
+// Define types
+type RootStackParamList = {
+  Dashboard: undefined;
+  GoalsPage: undefined;
+  NewGoal: undefined;
+};
+
+type GoalsPageProps = {
+  navigation: NativeStackNavigationProp<RootStackParamList, "GoalsPage">;
+};
+
+type MonthlyGoal = {
+  id: string;
+  month: string;
+  goals: number;
+  color: string;
+};
+
+type WeeklyGoal = {
+  id: string;
   title: string;
   description: string;
-  category: string;
+  category: "SPORTING" | "ACADEMIC" | "HEALTH" | string;
   weeksLeft: number;
   progress: number;
-}
+};
 
-const GoalCard: React.FC<GoalCardProps> = ({
-  title,
-  description,
-  category,
-  weeksLeft,
-  progress,
-}) => {
-  const getCategoryColor = (cat: string) => {
-    switch (cat) {
+type FeaturedGoal = {
+  id: string;
+  title: string;
+  // image: any;
+  color: string;
+};
+
+type CategoryColors = {
+  bg: string;
+  text: string;
+  badge: string;
+};
+
+// Sample data for monthly goals
+const monthlyGoals: MonthlyGoal[] = [
+  { id: "1", month: "January", goals: 3, color: "#8B5CF6" },
+  { id: "2", month: "February", goals: 5, color: "#EC4899" },
+  { id: "3", month: "March", goals: 2, color: "#F59E0B" },
+  { id: "4", month: "April", goals: 4, color: "#10B981" },
+  { id: "5", month: "May", goals: 6, color: "#3B82F6" },
+  { id: "6", month: "June", goals: 3, color: "#EF4444" },
+  { id: "7", month: "July", goals: 5, color: "#8B5CF6" },
+  { id: "8", month: "August", goals: 2, color: "#EC4899" },
+  { id: "9", month: "September", goals: 4, color: "#F59E0B" },
+  { id: "10", month: "October", goals: 1, color: "#10B981" },
+  { id: "11", month: "November", goals: 3, color: "#3B82F6" },
+  { id: "12", month: "December", goals: 7, color: "#EF4444" },
+];
+
+// Sample data for weekly goals
+const weeklyGoals: WeeklyGoal[] = [
+  {
+    id: "1",
+    title: "Go to the gym 4 times a week",
+    description: "3 times to achieve complete goal",
+    category: "SPORTING",
+    weeksLeft: 2,
+    progress: 60,
+  },
+  {
+    id: "2",
+    title: "Read three times for 30min",
+    description: "10 weeks to achieve complete goal",
+    category: "ACADEMIC",
+    weeksLeft: 10,
+    progress: 20,
+  },
+  {
+    id: "3",
+    title: "Get 8 hours sleep 5 nights",
+    description: "1 week to achieve goal",
+    category: "HEALTH",
+    weeksLeft: 1,
+    progress: 80,
+  },
+];
+
+// Sample data for featured goals
+const featuredGoals: FeaturedGoal[] = [
+  {
+    id: "1",
+    title: "Read a book per fortnight",
+    // image: require("./assets/reading.png"),
+    color: "#8B5CF6",
+  },
+  {
+    id: "2",
+    title: "Save for next overseas trip",
+    // image: require("./assets/travel.png"),
+    color: "#EC4899",
+  },
+  {
+    id: "3",
+    title: "Learn a new language",
+    // image: require("./assets/language.png"),
+    color: "#10B981",
+  },
+];
+
+// Placeholder images for the featured goals
+const placeholderImages = {
+  reading:
+    "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/placeholder-ob7miW3mUreePYfXdVwkpFWHthzoR5.svg?height=100&width=100",
+  travel:
+    "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/placeholder-ob7miW3mUreePYfXdVwkpFWHthzoR5.svg?height=100&width=100",
+  language:
+    "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/placeholder-ob7miW3mUreePYfXdVwkpFWHthzoR5.svg?height=100&width=100",
+};
+
+const GoalsPage = ({ navigation }: GoalsPageProps) => {
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [selectedWeek, setSelectedWeek] = useState<string | null>(null);
+
+  // Function to handle month selection
+  const handleMonthSelect = (monthId: string) => {
+    setSelectedMonth(monthId);
+    setSelectedWeek(null); // Reset week selection when month changes
+  };
+
+  // Function to handle week selection
+  const handleWeekSelect = (weekId: string) => {
+    setSelectedWeek(weekId);
+  };
+
+  // Function to go back to month view
+  const handleBackToMonths = () => {
+    setSelectedMonth(null);
+    setSelectedWeek(null);
+  };
+
+  // Function to go back to week view
+  const handleBackToWeeks = () => {
+    setSelectedWeek(null);
+  };
+
+  // Get category color
+  const getCategoryColor = (category: string): CategoryColors => {
+    switch (category) {
       case "SPORTING":
-        return "bg-blue-100 text-blue-500";
+        return { bg: "#EBF5FF", text: "#3B82F6", badge: "#3B82F6" };
       case "ACADEMIC":
-        return "bg-cyan-100 text-cyan-600";
+        return { bg: "#E0F7FA", text: "#0D9488", badge: "#0D9488" };
       case "HEALTH":
-        return "bg-purple-100 text-purple-600";
+        return { bg: "#F3E8FF", text: "#8B5CF6", badge: "#8B5CF6" };
       default:
-        return "bg-gray-100 text-gray-600";
+        return { bg: "#F3F4F6", text: "#6B7280", badge: "#6B7280" };
     }
   };
 
-  return (
-    <View style={tw`flex-row bg-white rounded-xl p-4 mb-3 shadow`}>
-      <View style={tw`flex-1`}>
-        <Text style={tw`text-base font-semibold mb-1`}>{title}</Text>
-        <Text style={tw`text-sm text-gray-500 mb-2`}>{description}</Text>
-        <View style={tw`mt-1`}>
-          <View style={tw`h-1 bg-gray-200 rounded-full mb-2`}>
-            <View
-              style={[
-                tw`h-1 bg-purple-500 rounded-full`,
-                { width: `${progress}%` },
-              ]}
-            />
+  // Render featured goal card
+  const renderFeaturedGoal = ({ item }: { item: FeaturedGoal }) => (
+    <TouchableOpacity
+      style={[styles.featuredGoalCard, { backgroundColor: "white" }]}
+      onPress={() => handleMonthSelect(item.id)}
+    >
+      <View style={styles.featuredGoalImageContainer}>
+        {/* <Image
+          source={{
+            uri: placeholderImages[
+              item.id === "1"
+                ? "reading"
+                : item.id === "2"
+                ? "travel"
+                : "language"
+            ],
+          }}
+          style={styles.featuredGoalImage}
+        /> */}
+      </View>
+      <Text style={styles.featuredGoalTitle}>{item.title}</Text>
+      <View style={styles.featuredGoalIndicator}>
+        <View
+          style={[
+            styles.featuredGoalIndicatorDot,
+            { backgroundColor: "#E5E7EB" },
+          ]}
+        />
+        <View
+          style={[
+            styles.featuredGoalIndicatorDot,
+            { backgroundColor: item.color },
+          ]}
+        />
+        <View
+          style={[
+            styles.featuredGoalIndicatorDot,
+            { backgroundColor: "#E5E7EB" },
+          ]}
+        />
+      </View>
+    </TouchableOpacity>
+  );
+
+  // Render monthly goal card
+  const renderMonthlyGoal = ({ item }: { item: MonthlyGoal }) => (
+    <TouchableOpacity
+      style={[styles.monthlyGoalCard, { backgroundColor: item.color }]}
+      onPress={() => handleMonthSelect(item.id)}
+    >
+      <Text style={styles.monthlyGoalMonth}>{item.month}</Text>
+      <Text style={styles.monthlyGoalCount}>{item.goals} Goals</Text>
+    </TouchableOpacity>
+  );
+
+  // Render weekly goal card
+  const renderWeeklyGoal = ({ item }: { item: WeeklyGoal }) => {
+    const categoryColors = getCategoryColor(item.category);
+
+    return (
+      <TouchableOpacity
+        style={styles.weeklyGoalCard}
+        onPress={() => handleWeekSelect(item.id)}
+      >
+        <View style={styles.weeklyGoalContent}>
+          <Text style={styles.weeklyGoalTitle}>{item.title}</Text>
+          <Text style={styles.weeklyGoalDescription}>{item.description}</Text>
+          <View style={styles.weeklyGoalProgressContainer}>
+            <View style={styles.weeklyGoalProgressBar}>
+              <View
+                style={[
+                  styles.weeklyGoalProgress,
+                  {
+                    width: `${item.progress}%`,
+                    backgroundColor: categoryColors.badge,
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.weeklyGoalTimeLeft}>
+              {item.weeksLeft} {item.weeksLeft === 1 ? "week" : "weeks"} to
+              achieve goal
+            </Text>
           </View>
-          <Text style={tw`text-xs text-gray-500`}>
-            {weeksLeft} {weeksLeft === 1 ? "week" : "weeks"} to achieve goal
+        </View>
+        <View
+          style={[
+            styles.weeklyGoalCategory,
+            { backgroundColor: categoryColors.bg },
+          ]}
+        >
+          <Text
+            style={[
+              styles.weeklyGoalCategoryText,
+              { color: categoryColors.text },
+            ]}
+          >
+            {item.category}
           </Text>
         </View>
-      </View>
-      <View style={tw`justify-center ml-2`}>
-        <View style={tw`${getCategoryColor(category)} px-3 py-1 rounded-full`}>
-          <Text style={tw`text-xs font-bold`}>{category}</Text>
-        </View>
-      </View>
-    </View>
-  );
-};
+      </TouchableOpacity>
+    );
+  };
 
-interface FeatureCardProps {
-  title: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}
-
-const FeatureCard: React.FC<FeatureCardProps> = ({ title, icon }) => {
-  return (
-    <View
-      style={tw`bg-white rounded-xl p-4 mr-3 shadow items-center justify-center w-40 h-48`}
-    >
-      <View style={tw`items-center justify-center h-24 w-24 mb-3`}>
-        <Ionicons name={icon} size={48} color="#a066cc" />
-      </View>
-      <Text style={tw`text-sm font-medium text-center mb-3`}>{title}</Text>
-      <View style={tw`flex-row justify-center`}>
-        <View style={tw`h-1.5 w-1.5 rounded-full bg-gray-200 mx-1`} />
-        <View style={tw`h-1.5 w-1.5 rounded-full bg-purple-500 mx-1`} />
-        <View style={tw`h-1.5 w-1.5 rounded-full bg-gray-200 mx-1`} />
-      </View>
-    </View>
-  );
-};
-
-interface GoalTrackerProps {
-  navigation: NativeStackNavigationProp<any>;
-}
-
-const GoalTracker: React.FC<GoalTrackerProps> = ({ navigation }) => {
-  const [selectedTab, setSelectedTab] = useState<"weekly" | "daily">("weekly");
+  // Find the selected goal
+  const selectedGoal = selectedWeek
+    ? weeklyGoals.find((g) => g.id === selectedWeek)
+    : null;
+  const selectedGoalProgress = selectedGoal?.progress || 0;
+  const selectedGoalCategory = selectedGoal?.category || "";
 
   return (
-    <SafeAreaView style={tw`flex-1 bg-purple-500`}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <View style={tw`flex-row justify-between items-center px-4 py-3`}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
-        <Text style={tw`text-xl font-bold text-white`}>Your Goals</Text>
-        <TouchableOpacity>
-          <Ionicons name="ellipsis-vertical" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Feature Cards */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={tw`px-4 pt-4`}
-      >
-        <FeatureCard title="Read a book per fortnight" icon="book-outline" />
-        <FeatureCard
-          title="Save for next overseas trip"
-          icon="airplane-outline"
-        />
-        <View style={tw`w-20 h-48`} />
-      </ScrollView>
-
-      {/* Tab Selection */}
-      <View style={tw`flex-row px-4 mt-4`}>
-        <TouchableOpacity
-          style={tw`mr-4 pb-2 ${
-            selectedTab === "weekly" ? "border-b-2 border-white" : ""
-          }`}
-          onPress={() => setSelectedTab("weekly")}
-        >
-          <Text
-            style={tw`text-lg font-medium ${
-              selectedTab === "weekly" ? "text-white" : "text-white opacity-70"
-            }`}
+      <View style={styles.header}>
+        {selectedMonth || selectedWeek ? (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={selectedWeek ? handleBackToWeeks : handleBackToMonths}
           >
-            Weekly Goals
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={tw`pb-2 ${
-            selectedTab === "daily" ? "border-b-2 border-white" : ""
-          }`}
-          onPress={() => setSelectedTab("daily")}
-        >
-          <Text
-            style={tw`text-lg font-medium ${
-              selectedTab === "daily" ? "text-white" : "text-white opacity-70"
-            }`}
-          >
-            Daily Goals
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Goal List */}
-      <ScrollView style={tw`flex-1 px-4 pt-4 bg-gray-50 rounded-t-3xl mt-4`}>
-        {selectedTab === "weekly" ? (
-          <>
-            <GoalCard
-              title="Go to the gym 4 times a week"
-              description="3 times to achieve complete goal"
-              category="SPORTING"
-              weeksLeft={2}
-              progress={60}
-            />
-            <GoalCard
-              title="Read three times for 30min"
-              description="10 weeks to achieve complete goal"
-              category="ACADEMIC"
-              weeksLeft={10}
-              progress={20}
-            />
-            <GoalCard
-              title="Get 8 hours sleep 5 nights"
-              description="1 week to achieve goal"
-              category="HEALTH"
-              weeksLeft={1}
-              progress={80}
-            />
-          </>
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
         ) : (
+          <View style={styles.backButton} />
+        )}
+
+        <Text style={styles.headerTitle}>
+          {selectedWeek
+            ? "Weekly Goal Details"
+            : selectedMonth
+            ? "Weekly Goals"
+            : "Your Goals"}
+        </Text>
+
+        <TouchableOpacity style={styles.menuButton}>
+          <Ionicons name="menu-outline" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.content}>
+        {!selectedMonth && !selectedWeek && (
           <>
-            <GoalCard
-              title="Meditate for 10 minutes"
-              description="Daily practice"
-              category="HEALTH"
-              weeksLeft={0}
-              progress={0}
-            />
-            <GoalCard
-              title="Drink 8 glasses of water"
-              description="Stay hydrated"
-              category="HEALTH"
-              weeksLeft={0}
-              progress={50}
-            />
-            <GoalCard
-              title="Review daily tasks"
-              description="Morning routine"
-              category="ACADEMIC"
-              weeksLeft={0}
-              progress={100}
+            {/* Featured Goals */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.featuredGoalsContainer}
+            >
+              {featuredGoals.map((goal) => (
+                <View key={goal.id} style={styles.featuredGoalCard}>
+                  {/* <Image
+                    source={{
+                      uri: placeholderImages[
+                        goal.id === "1"
+                          ? "reading"
+                          : goal.id === "2"
+                          ? "travel"
+                          : "language"
+                      ],
+                    }}
+                    style={styles.featuredGoalImage}
+                  /> */}
+                  <Text style={styles.featuredGoalTitle}>{goal.title}</Text>
+                </View>
+              ))}
+            </ScrollView>
+
+            {/* Monthly Goals */}
+            <Text style={styles.sectionTitle}>Monthly Goals</Text>
+            <FlatList
+              data={monthlyGoals}
+              renderItem={renderMonthlyGoal}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.monthlyGoalsContainer}
             />
           </>
         )}
-        <View style={tw`h-24`} />
+
+        {/* Weekly Goals */}
+        {(selectedMonth || !selectedWeek) && (
+          <>
+            <Text style={styles.sectionTitle}>
+              {selectedMonth
+                ? `Weekly Goals for ${
+                    monthlyGoals.find((m) => m.id === selectedMonth)?.month
+                  }`
+                : "Weekly Goals"}
+            </Text>
+            <FlatList
+              data={weeklyGoals}
+              renderItem={renderWeeklyGoal}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              contentContainerStyle={styles.weeklyGoalsContainer}
+            />
+          </>
+        )}
+
+        {/* Weekly Goal Details */}
+        {selectedWeek && selectedGoal && (
+          <View style={styles.goalDetails}>
+            <Text style={styles.goalDetailsTitle}>{selectedGoal.title}</Text>
+
+            {/* Goal details content would go here */}
+            <View style={styles.goalDetailsCard}>
+              <Text style={styles.goalDetailsSubtitle}>Progress</Text>
+              <View style={styles.goalDetailsProgressBar}>
+                <View
+                  style={[
+                    styles.goalDetailsProgress,
+                    {
+                      width: `${selectedGoalProgress}%`,
+                      backgroundColor:
+                        getCategoryColor(selectedGoalCategory).badge,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.goalDetailsProgressText}>
+                {selectedGoalProgress}% Complete
+              </Text>
+            </View>
+
+            <View style={styles.goalDetailsCard}>
+              <Text style={styles.goalDetailsSubtitle}>Description</Text>
+              <Text style={styles.goalDetailsDescription}>
+                {selectedGoal.description}
+              </Text>
+            </View>
+
+            <View style={styles.goalDetailsCard}>
+              <Text style={styles.goalDetailsSubtitle}>Time Remaining</Text>
+              <Text style={styles.goalDetailsTimeLeft}>
+                {selectedGoal.weeksLeft}{" "}
+                {selectedGoal.weeksLeft === 1 ? "week" : "weeks"} left
+              </Text>
+            </View>
+          </View>
+        )}
       </ScrollView>
 
-      {/* Bottom Button */}
-      <View style={tw`absolute bottom-6 left-0 right-0 px-4`}>
-        <TouchableOpacity
-          style={tw`bg-purple-600 h-14 rounded-full justify-center items-center shadow-lg`}
-          onPress={() => navigation.navigate("NewGoal")}
-        >
-          <Text style={tw`text-white font-bold text-base`}>NEW GOAL</Text>
-        </TouchableOpacity>
-      </View>
+      {/* New Goal Button */}
+      <TouchableOpacity
+        style={styles.newGoalButton}
+        onPress={() => navigation.navigate("NewGoal")}
+      >
+        <Text style={styles.newGoalButtonText}>NEW GOAL</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
 
-export default GoalTracker;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F3F4F6",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: "#8B5CF6",
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "white",
+  },
+  backButton: {
+    width: 24,
+    height: 24,
+  },
+  menuButton: {
+    width: 24,
+    height: 24,
+  },
+  content: {
+    flex: 1,
+    paddingBottom: 80,
+  },
+  featuredGoalsContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  featuredGoalCard: {
+    width: 160,
+    height: 200,
+    backgroundColor: "white",
+    borderRadius: 16,
+    marginRight: 15,
+    padding: 15,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  featuredGoalImageContainer: {
+    width: 100,
+    height: 100,
+    marginBottom: 15,
+  },
+  featuredGoalImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "contain",
+  },
+  featuredGoalTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+    color: "#1F2937",
+  },
+  featuredGoalIndicator: {
+    flexDirection: "row",
+    marginTop: 10,
+  },
+  featuredGoalIndicatorDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginHorizontal: 2,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginTop: 20,
+    marginBottom: 10,
+    paddingHorizontal: 20,
+  },
+  monthlyGoalsContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  monthlyGoalCard: {
+    width: 120,
+    height: 120,
+    borderRadius: 16,
+    marginRight: 10,
+    padding: 15,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  monthlyGoalMonth: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "white",
+    marginBottom: 5,
+  },
+  monthlyGoalCount: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.8)",
+  },
+  weeklyGoalsContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  weeklyGoalCard: {
+    flexDirection: "row",
+    backgroundColor: "white",
+    borderRadius: 12,
+    marginBottom: 10,
+    padding: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 1,
+  },
+  weeklyGoalContent: {
+    flex: 1,
+    marginRight: 10,
+  },
+  weeklyGoalTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1F2937",
+    marginBottom: 5,
+  },
+  weeklyGoalDescription: {
+    fontSize: 14,
+    color: "#6B7280",
+    marginBottom: 10,
+  },
+  weeklyGoalProgressContainer: {
+    marginTop: 5,
+  },
+  weeklyGoalProgressBar: {
+    height: 4,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 2,
+    marginBottom: 5,
+  },
+  weeklyGoalProgress: {
+    height: "100%",
+    borderRadius: 2,
+  },
+  weeklyGoalTimeLeft: {
+    fontSize: 12,
+    color: "#6B7280",
+  },
+  weeklyGoalCategory: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    height: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "flex-start",
+  },
+  weeklyGoalCategoryText: {
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  goalDetails: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  goalDetailsTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1F2937",
+    marginBottom: 15,
+  },
+  goalDetailsCard: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 1,
+  },
+  goalDetailsSubtitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1F2937",
+    marginBottom: 10,
+  },
+  goalDetailsProgressBar: {
+    height: 8,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 4,
+    marginBottom: 10,
+  },
+  goalDetailsProgress: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  goalDetailsProgressText: {
+    fontSize: 14,
+    color: "#6B7280",
+  },
+  goalDetailsDescription: {
+    fontSize: 14,
+    color: "#6B7280",
+    lineHeight: 20,
+  },
+  goalDetailsTimeLeft: {
+    fontSize: 14,
+    color: "#6B7280",
+  },
+  newGoalButton: {
+    position: "absolute",
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: "#8B5CF6",
+    borderRadius: 30,
+    height: 56,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  newGoalButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+});
+
+export default GoalsPage;

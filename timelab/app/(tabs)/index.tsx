@@ -1,196 +1,432 @@
-import React, { useState } from "react";
+"use client";
+
+import { useState } from "react";
 import {
-  Text,
   View,
-  FlatList,
+  Text,
+  ScrollView,
   TouchableOpacity,
-  Platform,
+  StyleSheet,
+  SafeAreaView,
   Dimensions,
 } from "react-native";
-import tw from "tailwind-react-native-classnames"; // Import Tailwind for styling
+import { Ionicons } from "@expo/vector-icons";
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window"); // Get screen dimensions
+const { width } = Dimensions.get("window");
 
-// Define types for our data
-interface MonthData {
-  id: number;
-  name: string;
-  shortName: string;
-  tasks: number;
-}
+// Month data for the 12 month cards
+const months = [
+  { name: "January", color: "#4361EE", tasks: 5 },
+  { name: "February", color: "#F9703B", tasks: 8 },
+  { name: "March", color: "#10B981", tasks: 3 },
+  { name: "April", color: "#8B5CF6", tasks: 7 },
+  { name: "May", color: "#EC4899", tasks: 4 },
+  { name: "June", color: "#F59E0B", tasks: 6 },
+  { name: "July", color: "#3B82F6", tasks: 9 },
+  { name: "August", color: "#EF4444", tasks: 2 },
+  { name: "September", color: "#14B8A6", tasks: 5 },
+  { name: "October", color: "#6366F1", tasks: 7 },
+  { name: "November", color: "#8B5CF6", tasks: 4 },
+  { name: "December", color: "#F97316", tasks: 8 },
+];
 
-interface DailyStats {
-  day: string;
-  tasksFinished: number;
-  otherTasks: number;
-}
+export default function Dashboard() {
+  const [username, setUsername] = useState("Samantha");
 
-export default function HomeScreen() {
-  const [selectedWeek, setSelectedWeek] = useState("Week 1");
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  // Simple bar chart component that doesn't use SVG
+  const SimpleBarChart = () => {
+    const data = [20, 45, 28, 80, 99, 43];
+    const maxValue = Math.max(...data);
 
-  // Data for months
-  const months: MonthData[] = [
-    { id: 1, name: "January", shortName: "JAN", tasks: 40 },
-    { id: 2, name: "February", shortName: "FEB", tasks: 40 },
-    { id: 3, name: "March", shortName: "MAR", tasks: 35 },
-    { id: 4, name: "April", shortName: "APR", tasks: 42 },
-    { id: 5, name: "May", shortName: "MAY", tasks: 37 },
-    { id: 6, name: "June", shortName: "JUN", tasks: 45 },
-    { id: 7, name: "July", shortName: "JUL", tasks: 39 },
-    { id: 8, name: "August", shortName: "AUG", tasks: 41 },
-    { id: 9, name: "September", shortName: "SEP", tasks: 38 },
-    { id: 10, name: "October", shortName: "OCT", tasks: 43 },
-    { id: 11, name: "November", shortName: "NOV", tasks: 36 },
-    { id: 12, name: "December", shortName: "DEC", tasks: 44 },
-  ];
-
-  const weeks: string[] = ["Week 1", "Week 2", "Week 3", "Week 4"];
-
-  const dailyStats: DailyStats[] = [
-    { day: "Sunday", tasksFinished: 5, otherTasks: 3 },
-    { day: "Monday", tasksFinished: 8, otherTasks: 4 },
-    { day: "Tuesday", tasksFinished: 6, otherTasks: 2 },
-    { day: "Wednesday", tasksFinished: 10, otherTasks: 5 },
-    { day: "Thursday", tasksFinished: 7, otherTasks: 3 },
-    { day: "Friday", tasksFinished: 6, otherTasks: 4 },
-    { day: "Saturday", tasksFinished: 5, otherTasks: 2 },
-  ];
-
-  const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
-  const selectWeek = (week: string) => {
-    setSelectedWeek(week);
-    setDropdownOpen(false);
-  };
-
-  const renderMonthCard = ({ item }: { item: MonthData }) => (
-    <View
-      style={[
-        tw`bg-blue-100 rounded-lg p-4 shadow-md justify-between`,
-        {
-          width: screenWidth * 0.4, // Adjust width based on screen size
-          height: screenHeight * 0.25, // Adjust height based on screen size
-          marginRight: 16,
-        },
-      ]}
-    >
-      <Text style={tw`text-lg font-bold text-gray-800`}>{item.name}</Text>
-      <Text style={tw`text-4xl font-extrabold text-blue-500`}>{item.tasks}</Text>
-      <Text style={tw`text-sm text-gray-500`}>{item.shortName}</Text>
-      <Text style={tw`text-xs text-gray-600`}>Tasks completed</Text>
-    </View>
-  );
-
-  const getBarWidth = (value: number): number => {
-    const maxWidth = screenWidth * 0.6; // Adjust max width based on screen size
-    const scaleFactor = maxWidth / 15;
-    return value * scaleFactor;
-  };
-
-  return (
-    <View style={tw`flex-1 bg-gray-50`}>
-      {/* Monthly Scrollable Cards */}
-      <FlatList
-        data={months}
-        renderItem={renderMonthCard}
-        keyExtractor={(item) => item.id.toString()}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={tw`px-4 py-6`}
-      />
-
-      {/* Statistics Section */}
-      <View
-        style={[
-          tw`bg-white rounded-t-3xl p-6 shadow-lg`,
-          { paddingBottom: screenHeight * 0.05 }, // Adjust padding dynamically
-        ]}
-      >
-        <Text style={tw`text-xl font-bold text-gray-800 mb-4 text-center`}>
-          Statistics
-        </Text>
-
-        {/* Week Dropdown */}
-        <View style={tw`mb-4`}>
-          <TouchableOpacity
-            onPress={toggleDropdown}
-            style={tw`border border-gray-300 rounded-lg px-4 py-2 flex-row justify-between items-center`}
-          >
-            <Text style={tw`text-base font-medium text-gray-800`}>
-              {selectedWeek}
-            </Text>
-            <Text style={tw`text-gray-500`}>▼</Text>
-          </TouchableOpacity>
-
-          {dropdownOpen && (
-            <View style={tw`border border-gray-300 bg-white rounded-lg mt-2`}>
-              {weeks.map((week, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => selectWeek(week)}
-                  style={tw`px-4 py-2 border-b border-gray-200`}
-                >
-                  <Text style={tw`text-base text-gray-800`}>{week}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* Bar Chart */}
-        <View>
-          {dailyStats.map((stat, index) => (
-            <View key={index} style={tw`flex-row items-center mb-4`}>
-              <Text style={tw`w-20 text-sm text-gray-800`}>{stat.day}</Text>
-              <View style={tw`flex-row flex-1`}>
-                <View
-                  style={[
-                    tw`h-4 rounded-l-lg`,
-                    {
-                      width: getBarWidth(stat.otherTasks),
-                      backgroundColor: "#A78BFA",
-                    },
-                  ]}
-                />
-                <View
-                  style={[
-                    tw`h-4`,
-                    {
-                      width: getBarWidth(stat.otherTasks + 2),
-                      backgroundColor: "#F87171",
-                    },
-                  ]}
-                />
-                <View
-                  style={[
-                    tw`h-4 rounded-r-lg`,
-                    {
-                      width: getBarWidth(stat.tasksFinished),
-                      backgroundColor: "#60A5FA",
-                    },
-                  ]}
-                />
-              </View>
+    return (
+      <View style={styles.simpleChart}>
+        <View style={styles.chartBars}>
+          {data.map((value, index) => (
+            <View key={index} style={styles.barContainer}>
+              <View
+                style={[
+                  styles.bar,
+                  {
+                    height: `${(value / maxValue) * 100}%`,
+                    backgroundColor: "#4361EE",
+                  },
+                ]}
+              />
             </View>
           ))}
         </View>
-
-        {/* Legend */}
-        <View style={tw`flex-row justify-center mt-4`}>
-          <View style={tw`flex-row items-center mr-4`}>
-            <View style={tw`w-4 h-4 bg-blue-500 rounded-full mr-2`} />
-            <Text style={tw`text-sm text-gray-800`}>Tasks Finished</Text>
-          </View>
-          <View style={tw`flex-row items-center mr-4`}>
-            <View style={tw`w-4 h-4 bg-red-400 rounded-full mr-2`} />
-            <Text style={tw`text-sm text-gray-800`}>In Progress</Text>
-          </View>
-          <View style={tw`flex-row items-center`}>
-            <View style={tw`w-4 h-4 bg-purple-400 rounded-full mr-2`} />
-            <Text style={tw`text-sm text-gray-800`}>Paused</Text>
-          </View>
+        <View style={styles.chartLabels}>
+          {["Jan", "Feb", "Mar", "Apr", "May", "Jun"].map((month, index) => (
+            <Text key={index} style={styles.chartLabel}>
+              {month}
+            </Text>
+          ))}
         </View>
       </View>
-    </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>Hi {username}</Text>
+            <Text style={styles.subGreeting}>Here are your projects</Text>
+          </View>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{username.charAt(0)}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Month Cards */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.cardsContainer}
+          contentContainerStyle={styles.cardsContent}
+        >
+          {months.map((month, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[styles.card, { backgroundColor: month.color }]}
+            >
+              <View style={styles.cardHeader}>
+                <View style={styles.cardIconContainer}>
+                  <Ionicons name="calendar" size={20} color="#fff" />
+                </View>
+              </View>
+              <View style={styles.cardDots}>
+                {[...Array(8)].map((_, i) => (
+                  <View key={i} style={styles.cardDot} />
+                ))}
+              </View>
+              <Text style={styles.cardTitle}>{month.name}</Text>
+              <Text style={styles.cardSubtitle}>Overview</Text>
+              <View style={styles.cardFooter}>
+                <Text style={styles.cardFooterText}>{month.tasks} Tasks</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Chart Section */}
+        <View style={styles.chartSection}>
+          <Text style={styles.sectionTitle}>Performance Overview</Text>
+          <View style={styles.chartCard}>
+            <SimpleBarChart />
+          </View>
+        </View>
+
+        {/* Tasks Section */}
+        <View style={styles.tasksSection}>
+          <Text style={styles.sectionTitle}>Personal Tasks</Text>
+
+          {/* Task Item 1 */}
+          <View style={styles.taskItem}>
+            <View style={[styles.taskIcon, { backgroundColor: "#F9703B" }]}>
+              <Text style={styles.taskIconText}>N</Text>
+            </View>
+            <View style={styles.taskContent}>
+              <Text style={styles.taskTitle}>
+                NDA Review for website project
+              </Text>
+              <Text style={styles.taskTime}>Today · 1pm</Text>
+            </View>
+            <View style={styles.taskStatus}>
+              <View style={styles.taskStatusDot} />
+            </View>
+          </View>
+
+          {/* Task Item 2 */}
+          <View style={styles.taskItem}>
+            <View style={[styles.taskIcon, { backgroundColor: "#4361EE" }]}>
+              <Ionicons name="mail-outline" size={16} color="#fff" />
+            </View>
+            <View style={styles.taskContent}>
+              <Text style={styles.taskTitle}>
+                Email Reply for Green Project
+              </Text>
+              <Text style={styles.taskTime}>Today · 1pm</Text>
+            </View>
+            <View style={styles.taskStatus}>
+              <View style={styles.taskStatusDot} />
+            </View>
+          </View>
+
+          {/* Task Item 3 */}
+          <View style={styles.taskItem}>
+            <View style={[styles.taskIcon, { backgroundColor: "#10B981" }]}>
+              <Ionicons name="call-outline" size={16} color="#fff" />
+            </View>
+            <View style={styles.taskContent}>
+              <Text style={styles.taskTitle}>Call with design team</Text>
+              <Text style={styles.taskTime}>Tomorrow · 10am</Text>
+            </View>
+            <View style={styles.taskStatus}>
+              <View
+                style={[styles.taskStatusDot, { backgroundColor: "#E5E7EB" }]}
+              />
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F9FAFB",
+  },
+  scrollView: {
+    flex: 1,
+    paddingBottom: 80,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  greeting: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#111827",
+  },
+  subGreeting: {
+    fontSize: 16,
+    color: "#6B7280",
+    marginTop: 4,
+  },
+  avatarContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#FEF3C7",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: "#F9703B",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  cardsContainer: {
+    marginTop: 20,
+  },
+  cardsContent: {
+    paddingHorizontal: 15,
+    paddingRight: 20,
+  },
+  card: {
+    width: 150,
+    height: 180,
+    borderRadius: 16,
+    marginHorizontal: 5,
+    padding: 16,
+    justifyContent: "space-between",
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+  cardIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cardDots: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    width: "70%",
+    marginVertical: 10,
+  },
+  cardDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    margin: 2,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.8)",
+    marginTop: 2,
+  },
+  cardFooter: {
+    marginTop: 10,
+  },
+  cardFooterText: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.8)",
+  },
+  chartSection: {
+    marginTop: 30,
+    paddingHorizontal: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#111827",
+    marginBottom: 15,
+  },
+  chartCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  simpleChart: {
+    height: 220,
+    width: "100%",
+    paddingTop: 20,
+  },
+  chartBars: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    height: 180,
+    width: "100%",
+    paddingHorizontal: 10,
+  },
+  barContainer: {
+    flex: 1,
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingHorizontal: 5,
+  },
+  bar: {
+    width: 20,
+    borderRadius: 10,
+  },
+  chartLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 10,
+    marginTop: 10,
+  },
+  chartLabel: {
+    fontSize: 12,
+    color: "#6B7280",
+    textAlign: "center",
+    flex: 1,
+  },
+  tasksSection: {
+    marginTop: 30,
+    paddingHorizontal: 20,
+  },
+  taskItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 1,
+  },
+  taskIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  taskIconText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  taskContent: {
+    flex: 1,
+  },
+  taskTitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#111827",
+  },
+  taskTime: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 4,
+  },
+  taskStatus: {
+    padding: 4,
+  },
+  taskStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#F9703B",
+  },
+  bottomNav: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 70,
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  navItem: {
+    alignItems: "center",
+  },
+  fab: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#F9703B",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 25,
+    shadowColor: "#F9703B",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+});

@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+"use client";
+
+import { useState } from "react";
 import {
   View,
   Text,
@@ -7,16 +9,17 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  NativeSyntheticEvent,
-  TextInputChangeEventData,
+  StyleSheet,
+  SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import tw from "tailwind-react-native-classnames";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
+// Define types
 type RootStackParamList = {
+  Dashboard: undefined;
+  GoalsPage: undefined;
   NewGoal: undefined;
-  // add other screens here if needed
 };
 
 type NewGoalProps = {
@@ -27,79 +30,94 @@ type Category = {
   id: string;
   name: string;
   icon: keyof typeof Ionicons.glyphMap;
+  color: string;
 };
 
-type CategoryItemProps = {
-  category: Category;
-  isSelected: boolean;
-  onSelect: (id: string) => void;
+type GoalType = {
+  id: string;
+  name: string;
 };
 
-const CategoryItem: React.FC<CategoryItemProps> = ({
-  category,
-  isSelected,
-  onSelect,
-}) => (
-  <TouchableOpacity
-    style={tw`flex-1 items-center p-3 rounded-xl mr-2 ${
-      isSelected ? "bg-purple-100 border border-purple-500" : "bg-gray-100"
-    }`}
-    onPress={() => onSelect(category.id)}
-  >
-    <Ionicons
-      name={category.icon}
-      size={24}
-      color={isSelected ? "#a066cc" : "#777"}
-    />
-    <Text
-      style={tw`mt-2 text-xs ${
-        isSelected ? "text-purple-700 font-medium" : "text-gray-600"
-      }`}
-    >
-      {category.name}
-    </Text>
-  </TouchableOpacity>
-);
+// Goal categories
+const categories: Category[] = [
+  {
+    id: "SPORTING",
+    name: "Sporting",
+    icon: "fitness-outline",
+    color: "#3B82F6",
+  },
+  { id: "ACADEMIC", name: "Academic", icon: "book-outline", color: "#0D9488" },
+  { id: "HEALTH", name: "Health", icon: "heart-outline", color: "#8B5CF6" },
+  { id: "FINANCE", name: "Finance", icon: "cash-outline", color: "#F59E0B" },
+];
 
-const NewGoal: React.FC<NewGoalProps> = ({ navigation }) => {
+// Goal types
+const goalTypes: GoalType[] = [
+  { id: "weekly", name: "Weekly" },
+  { id: "daily", name: "Daily" },
+  { id: "onetime", name: "One-time" },
+];
+
+const NewGoal = ({ navigation }: NewGoalProps) => {
   const [goalName, setGoalName] = useState("");
   const [goalDescription, setGoalDescription] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [duration, setDuration] = useState(1);
+  const [selectedGoalType, setSelectedGoalType] = useState("weekly");
+  const [duration, setDuration] = useState(4);
+  const [reminder, setReminder] = useState(false);
 
-  const categories: Category[] = [
-    { id: "SPORTING", name: "Sporting", icon: "fitness-outline" },
-    { id: "ACADEMIC", name: "Academic", icon: "book-outline" },
-    { id: "HEALTH", name: "Health", icon: "heart-outline" },
-    { id: "FINANCE", name: "Finance", icon: "cash-outline" },
-  ];
+  // Function to handle category selection
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+  };
+
+  // Function to handle goal type selection
+  const handleGoalTypeSelect = (typeId: string) => {
+    setSelectedGoalType(typeId);
+  };
+
+  // Function to handle duration change
+  const handleDurationChange = (value: number) => {
+    const newDuration = Math.max(1, Math.min(52, duration + value));
+    setDuration(newDuration);
+  };
+
+  // Function to handle goal creation
+  const handleCreateGoal = () => {
+    // Here you would typically save the goal data
+    // For now, we'll just navigate back
+    navigation.goBack();
+  };
 
   return (
-    <KeyboardAvoidingView
-      style={tw`flex-1 bg-white`}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView style={tw`flex-1`}>
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidingView}
+      >
         {/* Header */}
-        <View style={tw`flex-row justify-between items-center px-4 pt-12 pb-4`}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="close-outline" size={28} color="#000" />
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="close-outline" size={28} color="#1F2937" />
           </TouchableOpacity>
-          <Text style={tw`text-xl font-bold`}>New Goal</Text>
-          <TouchableOpacity>
-            <Text style={tw`text-lg text-purple-600 font-medium`}>Save</Text>
+          <Text style={styles.headerTitle}>New Goal</Text>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleCreateGoal}
+          >
+            <Text style={styles.saveButtonText}>Save</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Form Content */}
-        <View style={tw`px-4 py-4`}>
+        <ScrollView style={styles.content}>
           {/* Goal Name */}
-          <View style={tw`mb-6`}>
-            <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
-              Goal Name
-            </Text>
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Goal Name</Text>
             <TextInput
-              style={tw`border border-gray-300 rounded-lg p-3 text-base`}
+              style={styles.input}
               placeholder="What do you want to achieve?"
               value={goalName}
               onChangeText={setGoalName}
@@ -107,114 +125,319 @@ const NewGoal: React.FC<NewGoalProps> = ({ navigation }) => {
           </View>
 
           {/* Goal Description */}
-          <View style={tw`mb-6`}>
-            <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
-              Description
-            </Text>
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Description</Text>
             <TextInput
-              style={tw`border border-gray-300 rounded-lg p-3 text-base h-24`}
+              style={[styles.input, styles.textArea]}
               placeholder="Add more details about your goal"
               multiline
+              numberOfLines={4}
               value={goalDescription}
               onChangeText={setGoalDescription}
             />
           </View>
 
           {/* Category Selection */}
-          <View style={tw`mb-6`}>
-            <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
-              Category
-            </Text>
-            <View style={tw`flex-row justify-between`}>
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Category</Text>
+            <View style={styles.categoryContainer}>
               {categories.map((category) => (
-                <CategoryItem
+                <TouchableOpacity
                   key={category.id}
-                  category={category}
-                  isSelected={selectedCategory === category.id}
-                  onSelect={setSelectedCategory}
-                />
+                  style={[
+                    styles.categoryItem,
+                    selectedCategory === category.id &&
+                      styles.selectedCategoryItem,
+                    selectedCategory === category.id && {
+                      borderColor: category.color,
+                    },
+                  ]}
+                  onPress={() => handleCategorySelect(category.id)}
+                >
+                  <Ionicons
+                    name={category.icon}
+                    size={24}
+                    color={
+                      selectedCategory === category.id
+                        ? category.color
+                        : "#6B7280"
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.categoryText,
+                      selectedCategory === category.id &&
+                        styles.selectedCategoryText,
+                      selectedCategory === category.id && {
+                        color: category.color,
+                      },
+                    ]}
+                  >
+                    {category.name}
+                  </Text>
+                </TouchableOpacity>
               ))}
             </View>
           </View>
 
           {/* Goal Type */}
-          <View style={tw`mb-6`}>
-            <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
-              Goal Type
-            </Text>
-            <View
-              style={tw`flex-row border border-gray-300 rounded-lg overflow-hidden`}
-            >
-              <TouchableOpacity
-                style={tw`flex-1 py-3 px-4 bg-purple-500 items-center`}
-              >
-                <Text style={tw`text-white font-medium`}>Weekly</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={tw`flex-1 py-3 px-4 bg-white items-center`}
-              >
-                <Text style={tw`text-gray-700`}>Daily</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={tw`flex-1 py-3 px-4 bg-white items-center`}
-              >
-                <Text style={tw`text-gray-700`}>One-time</Text>
-              </TouchableOpacity>
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Goal Type</Text>
+            <View style={styles.goalTypeContainer}>
+              {goalTypes.map((type) => (
+                <TouchableOpacity
+                  key={type.id}
+                  style={[
+                    styles.goalTypeItem,
+                    selectedGoalType === type.id && styles.selectedGoalTypeItem,
+                  ]}
+                  onPress={() => handleGoalTypeSelect(type.id)}
+                >
+                  <Text
+                    style={[
+                      styles.goalTypeText,
+                      selectedGoalType === type.id &&
+                        styles.selectedGoalTypeText,
+                    ]}
+                  >
+                    {type.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
           {/* Duration */}
-          <View style={tw`mb-6`}>
-            <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
-              Duration (weeks)
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>
+              Duration (
+              {selectedGoalType === "weekly"
+                ? "weeks"
+                : selectedGoalType === "daily"
+                ? "days"
+                : "days"}
+              )
             </Text>
-            <View
-              style={tw`flex-row items-center border border-gray-300 rounded-lg p-2`}
-            >
+            <View style={styles.durationContainer}>
               <TouchableOpacity
-                style={tw`w-10 h-10 items-center justify-center`}
-                onPress={() => setDuration(Math.max(1, duration - 1))}
+                style={styles.durationButton}
+                onPress={() => handleDurationChange(-1)}
               >
-                <Ionicons name="remove" size={24} color="#777" />
+                <Ionicons name="remove" size={24} color="#6B7280" />
               </TouchableOpacity>
-              <View style={tw`flex-1 items-center`}>
-                <Text style={tw`text-lg font-medium`}>{duration}</Text>
+              <View style={styles.durationValueContainer}>
+                <Text style={styles.durationValue}>{duration}</Text>
               </View>
               <TouchableOpacity
-                style={tw`w-10 h-10 items-center justify-center`}
-                onPress={() => setDuration(duration + 1)}
+                style={styles.durationButton}
+                onPress={() => handleDurationChange(1)}
               >
-                <Ionicons name="add" size={24} color="#777" />
+                <Ionicons name="add" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Reminder */}
-          <View style={tw`mb-6`}>
-            <Text style={tw`text-sm font-medium text-gray-700 mb-2`}>
-              Reminder
-            </Text>
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Reminder</Text>
             <TouchableOpacity
-              style={tw`flex-row justify-between items-center border border-gray-300 rounded-lg p-3`}
+              style={styles.reminderButton}
+              onPress={() => setReminder(!reminder)}
             >
-              <Text style={tw`text-base text-gray-700`}>Set a reminder</Text>
-              <Ionicons name="chevron-forward" size={20} color="#777" />
+              <Text style={styles.reminderButtonText}>
+                {reminder ? "Reminder set" : "Set a reminder"}
+              </Text>
+              <Ionicons
+                name={reminder ? "alarm" : "alarm-outline"}
+                size={24}
+                color={reminder ? "#8B5CF6" : "#6B7280"}
+              />
             </TouchableOpacity>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
 
-      {/* Create Button */}
-      <View style={tw`px-4 py-4 border-t border-gray-200`}>
-        <TouchableOpacity
-          style={tw`bg-purple-600 py-4 rounded-lg items-center`}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={tw`text-white font-bold text-base`}>CREATE GOAL</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+        {/* Create Button */}
+        <View style={styles.footer}>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={handleCreateGoal}
+          >
+            <Text style={styles.createButtonText}>CREATE GOAL</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 15,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  closeButton: {
+    padding: 5,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#1F2937",
+  },
+  saveButton: {
+    padding: 5,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#8B5CF6",
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  formGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1F2937",
+    marginBottom: 10,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: "#1F2937",
+    backgroundColor: "#F9FAFB",
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: "top",
+  },
+  categoryContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  categoryItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 8,
+    marginHorizontal: 4,
+    backgroundColor: "#F9FAFB",
+  },
+  selectedCategoryItem: {
+    backgroundColor: "#F3E8FF",
+    borderWidth: 2,
+  },
+  categoryText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: "#6B7280",
+  },
+  selectedCategoryText: {
+    fontWeight: "600",
+  },
+  goalTypeContainer: {
+    flexDirection: "row",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  goalTypeItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    backgroundColor: "#F9FAFB",
+  },
+  selectedGoalTypeItem: {
+    backgroundColor: "#8B5CF6",
+  },
+  goalTypeText: {
+    fontSize: 14,
+    color: "#6B7280",
+  },
+  selectedGoalTypeText: {
+    color: "white",
+    fontWeight: "600",
+  },
+  durationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  durationButton: {
+    width: 50,
+    height: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F9FAFB",
+  },
+  durationValueContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  durationValue: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1F2937",
+  },
+  reminderButton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: "#F9FAFB",
+  },
+  reminderButtonText: {
+    fontSize: 16,
+    color: "#6B7280",
+  },
+  footer: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+  },
+  createButton: {
+    backgroundColor: "#8B5CF6",
+    borderRadius: 30,
+    height: 56,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  createButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+});
 
 export default NewGoal;
