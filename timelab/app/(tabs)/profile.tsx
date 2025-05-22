@@ -1,127 +1,234 @@
-import React from "react";
+import type React from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   SafeAreaView,
   Image,
+  ScrollView,
 } from "react-native";
 import tw from "tailwind-react-native-classnames";
 
-// Define badge types for type safety
-interface RegularBadge {
-  id: number;
-  color: string;
-  stars: number;
-  special?: false;
+// Component Types
+interface HistoryItemProps {
+  title: string;
+  timestamp: string;
+  profileImage: any;
+  userName: string;
 }
 
-interface SpecialBadge {
-  id: number;
-  color: string;
-  special: true;
+interface ActiveTaskItemProps {
+  title: string;
+  completed: boolean;
+  dueDate: string;
 }
 
-type Badge = RegularBadge | SpecialBadge;
+interface ProfileHeaderProps {
+  name: string;
+  email: string;
+  profileImage: any;
+  goals: number;
+  activeTasks: number;
+  finished: number;
+}
 
-export default function Profile() {
-  // Badge data for the badges section
-  const badges: Badge[] = [
-    { id: 1, color: "red", stars: 3 },
-    { id: 2, color: "purple", stars: 3 },
-    { id: 3, color: "orange", stars: 3 },
-    { id: 4, color: "blue", stars: 4 },
-    { id: 5, color: "green", stars: 3 },
-    { id: 6, color: "red", special: true },
-  ];
+interface SectionHeaderProps {
+  title: string;
+}
 
-  // Render a regular badge with stars
-  const renderBadge = (color: string, stars: number) => {
-    const colorMap: Record<string, string> = {
-      red: "bg-red-500",
-      purple: "bg-purple-500",
-      orange: "bg-orange-500",
-      blue: "bg-blue-500",
-      green: "bg-green-500",
-    };
-
-    return (
-      <View style={tw`items-center`}>
-        <View
-          style={tw`w-12 h-12 rounded-full ${colorMap[color]} flex items-center justify-center`}
-        >
-          {Array.from({ length: stars }).map((_, i) => (
-            <Text key={i} style={tw`text-white text-xs`}>
-              ★
-            </Text>
-          ))}
+// Reusable Components (defined within the same file)
+const HistoryItem: React.FC<HistoryItemProps> = ({
+  title,
+  timestamp,
+  profileImage,
+  userName,
+}) => {
+  return (
+    <View style={tw`mb-4 border-b border-gray-100 pb-4`}>
+      <View style={tw`flex-row items-center mb-2`}>
+        <Image
+          source={profileImage}
+          style={tw`w-10 h-10 rounded-full`}
+          resizeMode="cover"
+        />
+        <View style={tw`ml-3`}>
+          <Text style={tw`text-gray-800 font-medium`}>{userName}</Text>
+          <Text style={tw`text-gray-500 text-xs`}>{timestamp}</Text>
         </View>
       </View>
-    );
-  };
+      <Text style={tw`text-gray-800 mb-2`}>{title}</Text>
+    </View>
+  );
+};
 
-  // Render the special star badge
-  const renderSpecialBadge = () => (
-    <View style={tw`items-center`}>
-      <View style={tw`w-12 h-12 rounded-full bg-red-500 flex items-center justify-center`}>
-        <Text style={tw`text-white text-lg font-bold`}>★</Text>
+const ActiveTaskItem: React.FC<ActiveTaskItemProps> = ({
+  title,
+  completed,
+  dueDate,
+}) => {
+  return (
+    <View style={tw`flex-row items-center mb-4 bg-gray-50 p-3 rounded-lg`}>
+      <View
+        style={tw`${
+          completed ? "bg-green-500" : "bg-gray-300"
+        } w-8 h-8 rounded-full items-center justify-center mr-3`}
+      >
+        {completed && <Text style={tw`text-white font-bold`}>✓</Text>}
+      </View>
+      <View style={tw`flex-1`}>
+        <Text style={tw`text-gray-800 font-medium`}>{title}</Text>
+        <View style={tw`flex-row items-center mt-1`}>
+          <Text style={tw`text-gray-500 text-xs`}>⏱ {dueDate}</Text>
+        </View>
       </View>
     </View>
   );
+};
 
+const ProfileHeader: React.FC<ProfileHeaderProps> = ({
+  name,
+  email,
+  profileImage,
+  goals,
+  activeTasks,
+  finished,
+}) => {
   return (
-    <SafeAreaView style={tw`flex-1 bg-gray-50`}>
-      {/* Header */}
-      <View style={tw`py-6 bg-white shadow-md items-center`}>
-        <Text style={tw`text-2xl font-bold text-gray-800`}>Profile</Text>
-      </View>
-
-      {/* Profile Picture */}
-      <View style={tw`items-center mt-6`}>
-        <View style={tw`w-24 h-24 rounded-full bg-gray-200 overflow-hidden`}>
+    <View style={[tw`px-4 pt-6 pb-6`, { backgroundColor: "#0098da" }]}>
+      {/* Profile Picture and Info */}
+      <View style={tw`items-center`}>
+        <View
+          style={tw`w-24 h-24 rounded-full bg-gray-200 overflow-hidden border-2 border-white`}
+        >
           <Image
-            source={require("../../assets/images/profile.png")} // Update this path
+            source={profileImage}
             style={tw`w-full h-full`}
             resizeMode="cover"
           />
         </View>
-        <Text style={tw`mt-4 text-lg font-bold text-gray-800`}>Juan Dela Cruz</Text>
-        <Text style={tw`text-gray-500`}>Juan@Gmail.com</Text>
+        <Text style={tw`mt-4 text-xl font-bold text-white`}>{name}</Text>
+        <Text style={tw`text-white text-sm opacity-80`}>{email}</Text>
       </View>
 
-      {/* Separator */}
-      <View style={tw`h-px bg-gray-300 my-6 mx-6`} />
-
-      {/* Action Buttons */}
-      <View style={tw`px-6`}>
-        <TouchableOpacity
-          style={tw`bg-blue-500 py-3 rounded-lg items-center mb-4 shadow`}
-        >
-          <Text style={tw`text-white font-bold text-base`}>Edit Profile</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={tw`bg-blue-500 py-3 rounded-lg items-center shadow`}
-        >
-          <Text style={tw`text-white font-bold text-base`}>Change Password</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Separator */}
-      <View style={tw`h-px bg-gray-300 my-6 mx-6`} />
-
-      {/* Badges Section */}
-      <View style={tw`px-6`}>
-        <Text style={tw`text-lg font-bold text-gray-800 mb-4`}>Badges</Text>
-        <View style={tw`flex-row flex-wrap justify-between`}>
-          {badges.map((badge) => (
-            <View key={badge.id} style={tw`w-[30%] mb-4 items-center`}>
-              {badge.special
-                ? renderSpecialBadge()
-                : renderBadge(badge.color, "stars" in badge ? badge.stars : 3)}
-            </View>
-          ))}
+      {/* Stats */}
+      <View style={tw`flex-row justify-between mt-6`}>
+        <View style={tw`items-center`}>
+          <Text style={tw`text-white font-bold text-xl`}>{goals}</Text>
+          <Text style={tw`text-white text-xs uppercase`}>Goals</Text>
+        </View>
+        <View style={tw`items-center`}>
+          <Text style={tw`text-white font-bold text-xl`}>{activeTasks}</Text>
+          <Text style={tw`text-white text-xs uppercase`}>Active Tasks</Text>
+        </View>
+        <View style={tw`items-center`}>
+          <Text style={tw`text-white font-bold text-xl`}>{finished}</Text>
+          <Text style={tw`text-white text-xs uppercase`}>Finished Tasks</Text>
         </View>
       </View>
+    </View>
+  );
+};
+
+const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => {
+  return <Text style={tw`text-gray-800 font-bold text-lg mb-4`}>{title}</Text>;
+};
+
+// Main Profile Component
+export default function Profile() {
+  // Sample data for active tasks
+  const activeTasks = [
+    {
+      id: 1,
+      title: "Complete 10km run",
+      completed: false,
+      dueDate: "Tomorrow",
+    },
+    { id: 2, title: "Cycling training", completed: true, dueDate: "Today" },
+    { id: 3, title: "Mountain trail", completed: false, dueDate: "Next week" },
+  ];
+
+  // Sample data for history
+  const historyData = [
+    {
+      id: 1,
+      title: "Cycled",
+      timestamp: "2 days ago",
+    },
+    {
+      id: 2,
+      title: "Reported closure",
+      timestamp: "3 days ago",
+    },
+    {
+      id: 3,
+      title: "Completed trail",
+      timestamp: "5 days ago",
+    },
+  ];
+
+  const profileImage = require("../../assets/images/profile.png");
+
+  return (
+    <SafeAreaView style={tw`flex-1 bg-gray-50`}>
+      <ScrollView>
+        {/* Profile Header Component */}
+        <ProfileHeader
+          name="Louis Saville"
+          email="louis@example.com"
+          profileImage={profileImage}
+          goals={3420}
+          activeTasks={461}
+          finished={348}
+        />
+
+        {/* Content Container */}
+        <View style={tw`bg-white rounded-t-3xl px-4 pt-6 -mt-4`}>
+          {/* Action Buttons */}
+          <View style={tw`mb-6`}>
+            <TouchableOpacity
+              style={tw`bg-blue-500 py-3 rounded-lg items-center mb-4 shadow`}
+            >
+              <Text style={tw`text-white font-bold text-base`}>
+                Edit Profile
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={tw`bg-blue-500 py-3 rounded-lg items-center shadow`}
+            >
+              <Text style={tw`text-white font-bold text-base`}>
+                Change Password
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Active Tasks Section */}
+          <View style={tw`mb-6`}>
+            <SectionHeader title="Active Tasks" />
+            {activeTasks.map((task) => (
+              <ActiveTaskItem
+                key={task.id}
+                title={task.title}
+                completed={task.completed}
+                dueDate={task.dueDate}
+              />
+            ))}
+          </View>
+
+          {/* History Section */}
+          <View style={tw`mb-6`}>
+            <SectionHeader title="History" />
+            {historyData.map((item) => (
+              <HistoryItem
+                key={item.id}
+                title={item.title}
+                timestamp={item.timestamp}
+                profileImage={profileImage}
+                userName="Louis Saville"
+              />
+            ))}
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
