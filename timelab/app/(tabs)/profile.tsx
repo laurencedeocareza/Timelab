@@ -8,6 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import tw from "tailwind-react-native-classnames";
+import { useNavigation } from "@react-navigation/native";
 
 // Component Types
 interface HistoryItemProps {
@@ -135,6 +136,8 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => {
 
 // Main Profile Component
 export default function Profile() {
+  const navigation = useNavigation<any>(); // <-- Fix: add <any>
+
   // Sample data for active tasks
   const activeTasks = [
     {
@@ -193,10 +196,18 @@ export default function Profile() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={tw`bg-blue-500 py-3 rounded-lg items-center shadow`}
+              style={tw`bg-blue-500 py-3 rounded-lg items-center shadow mb-4`}
             >
               <Text style={tw`text-white font-bold text-base`}>
                 Change Password
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={tw`bg-blue-500 py-3 rounded-lg items-center shadow`}
+              onPress={() => navigation.navigate("userInfo")} // <-- Add this handler
+            >
+              <Text style={tw`text-white font-bold text-base`}>
+                Change Account
               </Text>
             </TouchableOpacity>
           </View>
