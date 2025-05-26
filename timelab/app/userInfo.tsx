@@ -12,6 +12,12 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import { auth } from "../FirebaseConfig";
+import { Alert } from "react-native";
 
 const { width } = Dimensions.get("window");
 
@@ -24,6 +30,21 @@ export default function AuthScreens() {
   const [activeTab, setActiveTab] = useState("signup");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [rememberPassword, setRememberPassword] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  // Animation value for sliding between screens
+  // Sign Up form states
+  const [signUpData, setSignUpData] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+  });
+
+  // Sign In form states
+  const [signInData, setSignInData] = useState({
+    email: "",
+    password: "",
+  });
 
   // Animation value for sliding between screens
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -45,9 +66,79 @@ export default function AuthScreens() {
     outputRange: [0, -width],
   });
 
-  const handleSignUp = () => {
-    // Navigate to the welcomePage
-    navigation.navigate("welcomePage");
+  // Sign Up function
+  const handleSignUp = async () => {
+    if (!signUpData.email || !signUpData.password || !signUpData.fullName) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    if (signUpData.password.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        signUpData.email,
+        signUpData.password
+      );
+
+      console.log("User created successfully:", userCredential.user.uid);
+      Alert.alert("Success", "Account created successfully!", [
+        {
+          text: "OK",
+          onPress: () => navigation.navigate("(tabs)", { screen: "index" }),
+        },
+      ]);
+    } catch (error: any) {
+      console.error("Sign up error:", error);
+      Alert.alert("Sign Up Error", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Sign In function
+  const handleSignIn = async () => {
+    if (!signInData.email || !signInData.password) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        signInData.email,
+        signInData.password
+      );
+
+      console.log("User signed in successfully:", userCredential.user.uid);
+      Alert.alert("Success", "Signed in successfully!", [
+        {
+          text: "OK",
+          onPress: () => navigation.navigate("(tabs)", { screen: "index" }),
+        },
+      ]);
+    } catch (error: any) {
+      console.error("Sign in error:", error);
+      let errorMessage = "An error occurred during sign in";
+
+      if (error.code === "auth/user-not-found") {
+        errorMessage = "No account found with this email";
+      } else if (error.code === "auth/wrong-password") {
+        errorMessage = "Incorrect password";
+      } else if (error.code === "auth/invalid-email") {
+        errorMessage = "Invalid email address";
+      }
+
+      Alert.alert("Sign In Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -100,6 +191,10 @@ export default function AuthScreens() {
               style={styles.input}
               placeholder="Full Name"
               placeholderTextColor="#666"
+              value={signUpData.fullName}
+              onChangeText={(text) =>
+                setSignUpData({ ...signUpData, fullName: text })
+              }
             />
           </View>
 
@@ -115,6 +210,11 @@ export default function AuthScreens() {
               placeholder="Email"
               placeholderTextColor="#666"
               keyboardType="email-address"
+              autoCapitalize="none"
+              value={signUpData.email}
+              onChangeText={(text) =>
+                setSignUpData({ ...signUpData, email: text })
+              }
             />
           </View>
 
@@ -130,6 +230,10 @@ export default function AuthScreens() {
               placeholder="Password"
               placeholderTextColor="#666"
               secureTextEntry={!passwordVisible}
+              value={signUpData.password}
+              onChangeText={(text) =>
+                setSignUpData({ ...signUpData, password: text })
+              }
             />
             <TouchableOpacity
               onPress={() => setPasswordVisible(!passwordVisible)}
@@ -143,8 +247,14 @@ export default function AuthScreens() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.authButton} onPress={handleSignUp}>
-            <Text style={styles.authButtonText}>Sign Up</Text>
+          <TouchableOpacity
+            style={[styles.authButton, loading && styles.disabledButton]}
+            onPress={handleSignUp}
+            disabled={loading}
+          >
+            <Text style={styles.authButtonText}>
+              {loading ? "Creating Account..." : "Sign Up"}
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.dividerContainer}>
@@ -182,6 +292,11 @@ export default function AuthScreens() {
               placeholder="Email"
               placeholderTextColor="#666"
               keyboardType="email-address"
+              autoCapitalize="none"
+              value={signInData.email}
+              onChangeText={(text) =>
+                setSignInData({ ...signInData, email: text })
+              }
             />
           </View>
 
@@ -197,6 +312,10 @@ export default function AuthScreens() {
               placeholder="Password"
               placeholderTextColor="#666"
               secureTextEntry={!passwordVisible}
+              value={signInData.password}
+              onChangeText={(text) =>
+                setSignInData({ ...signInData, password: text })
+              }
             />
             <TouchableOpacity
               onPress={() => setPasswordVisible(!passwordVisible)}
@@ -228,8 +347,14 @@ export default function AuthScreens() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.authButton}>
-            <Text style={styles.authButtonText}>Sign In</Text>
+          <TouchableOpacity
+            style={[styles.authButton, loading && styles.disabledButton]}
+            onPress={handleSignIn}
+            disabled={loading}
+          >
+            <Text style={styles.authButtonText}>
+              {loading ? "Signing In..." : "Sign In"}
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.dividerContainer}>
@@ -444,5 +569,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#2A2A5A",
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
