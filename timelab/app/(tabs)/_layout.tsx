@@ -21,20 +21,20 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Methods Tab */}
+      {/* Tools Tab (2nd position) */}
       <Tabs.Screen 
-        name="methods" 
+        name="tools" 
         options={{
           tabBarIcon: ({ color, size }) => (
             <Image 
-              source={require('../../assets/images/method.png')} 
+              source={require('../../assets/images/tools.png')} 
               style={{ width: size, height: size, tintColor: color }}
             />
           ),
         }}
       />
 
-      {/* Custom Tab with Custom Plus Icon */}
+      {/* Custom Tab with Plus Icon (3rd position) */}
       <Tabs.Screen 
         name="custom" 
         options={{
@@ -68,20 +68,20 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Tools Tab */}
+      {/* Notes Page Tab (4th position) */}
       <Tabs.Screen 
-        name="tools" 
+        name="notesPage" 
         options={{
           tabBarIcon: ({ color, size }) => (
             <Image 
-              source={require('../../assets/images/tools.png')} 
+              source={require('../../assets/images/writing.png')} 
               style={{ width: size, height: size, tintColor: color }}
             />
           ),
         }}
       />
 
-      {/* Profile Tab */}
+      {/* Profile Tab (5th position) */}
       <Tabs.Screen 
         name="profile" 
         options={{
