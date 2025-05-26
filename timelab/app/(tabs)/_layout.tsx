@@ -1,15 +1,17 @@
 import { Tabs } from "expo-router";
-import { Image } from "react-native";
+import { Image, View } from "react-native";
 import "../../global.css";
 
 export default function TabLayout() {
   return (
-    <Tabs>
+    <Tabs screenOptions={{
+      headerShown: false, // Hide header with tab names
+      tabBarShowLabel: false // Hide labels below icons
+    }}>
       {/* Home Tab */}
       <Tabs.Screen 
         name="index" 
         options={{
-          title: "Home",
           tabBarIcon: ({ color, size }) => (
             <Image 
               source={require('../../assets/images/home.png')} 
@@ -23,7 +25,6 @@ export default function TabLayout() {
       <Tabs.Screen 
         name="methods" 
         options={{
-          title: "Methods",
           tabBarIcon: ({ color, size }) => (
             <Image 
               source={require('../../assets/images/method.png')} 
@@ -33,11 +34,44 @@ export default function TabLayout() {
         }}
       />
 
+      {/* Custom Tab with Custom Plus Icon */}
+      <Tabs.Screen 
+        name="custom" 
+        options={{
+          tabBarIcon: () => (
+            <View style={{ 
+              backgroundColor: '#3B82F6', // Blue background
+              borderRadius: 30,
+              width: 50,
+              height: 50,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 5
+            }}>
+              {/* Horizontal line of the plus */}
+              <View style={{
+                width: 22,
+                height: 3,
+                backgroundColor: 'white',
+                position: 'absolute'
+              }} />
+              
+              {/* Vertical line of the plus */}
+              <View style={{
+                width: 3,
+                height: 22,
+                backgroundColor: 'white',
+                position: 'absolute'
+              }} />
+            </View>
+          ),
+        }}
+      />
+
       {/* Tools Tab */}
       <Tabs.Screen 
         name="tools" 
         options={{
-          title: "Tools",
           tabBarIcon: ({ color, size }) => (
             <Image 
               source={require('../../assets/images/tools.png')} 
@@ -51,7 +85,6 @@ export default function TabLayout() {
       <Tabs.Screen 
         name="profile" 
         options={{
-          title: "Profile",
           tabBarIcon: ({ color, size }) => (
             <Image 
               source={require('../../assets/images/profile.png')} 

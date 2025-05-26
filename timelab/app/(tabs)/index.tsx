@@ -209,23 +209,23 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   avatarContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 60, // Increased from 50
+    height: 60, // Increased from 50
+    borderRadius: 30, // Increased from 25
     backgroundColor: "#FEF3C7",
     justifyContent: "center",
     alignItems: "center",
   },
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 56, // Increased from 46
+    height: 56, // Increased from 46
+    borderRadius: 28, // Increased from 23
     backgroundColor: "#F9703B",
     justifyContent: "center",
     alignItems: "center",
   },
   avatarText: {
-    fontSize: 20,
+    fontSize: 24, // Increased from 20
     fontWeight: "bold",
     color: "#fff",
   },
@@ -249,9 +249,9 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   cardIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
+    width: 42, // Increased from 36
+    height: 42, // Increased from 36
+    borderRadius: 10, // Increased from 8
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     justifyContent: "center",
     alignItems: "center",
@@ -360,15 +360,15 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   taskIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
+    width: 44, // Increased from 36
+    height: 44, // Increased from 36
+    borderRadius: 10, // Increased from 8
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
   },
   taskIconText: {
-    fontSize: 16,
+    fontSize: 18, // Increased from 16
     fontWeight: "bold",
     color: "#fff",
   },
