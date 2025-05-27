@@ -8,6 +8,7 @@ import {
   Dimensions,
 } from "react-native";
 import tw from "tailwind-react-native-classnames";
+import { useRouter } from "expo-router";
 
 interface Tool {
   id: number;
@@ -15,16 +16,20 @@ interface Tool {
   icon: string;
   iconType: string;
   colors: string[];
+  route?: string; // Add route property
 }
 
 export default function Tools() {
+  const router = useRouter();
+
   const tools: Tool[] = [
     {
       id: 1,
       title: "Methods",
-      icon: "methods", // Updated to reference local image
+      icon: "methods",
       iconType: "image",
       colors: ["bg-blue-100", "bg-blue-200"],
+      route: "/methods", // Route to methods.tsx file
     },
     {
       id: 2,
@@ -42,13 +47,20 @@ export default function Tools() {
     },
   ];
 
+  // Add navigation handler
+  const handleToolPress = (tool: Tool) => {
+    if (tool.route) {
+      console.log("Navigating to:", tool.route);
+      router.push(tool.route);
+    }
+  };
+
   const renderIcon = (tool: Tool) => {
     if (tool.id === 1) {
-      // Render methods.png image for Methods tool
       return (
         <View style={tw`w-12 h-12 items-center justify-center`}>
           <Image
-            source={require("../../assets/images/methods.png")} // Update path as needed
+            source={require("../../assets/images/methods.png")}
             style={tw`w-10 h-10`}
             resizeMode="contain"
           />
@@ -96,6 +108,7 @@ export default function Tools() {
               tw`${tool.colors[0]}`,
             ]}
             activeOpacity={0.7}
+            onPress={() => handleToolPress(tool)} // Add navigation handler
           >
             {renderIcon(tool)}
             <Text style={tw`text-center mt-2 font-medium text-lg`}>

@@ -8,35 +8,49 @@ import {
   Dimensions,
 } from "react-native";
 import tw from "tailwind-react-native-classnames";
+import { useRouter } from "expo-router"; // Add this import
 
 interface Tool {
   id: number;
   title: string;
-  icon: any; // Updated to match the ImageSourcePropType
+  icon: any;
   colors: string[];
+  route?: string; // Add route property
 }
 
 export default function Tools() {
+  const router = useRouter(); // Add router
+
   const tools: Tool[] = [
     {
       id: 1,
       title: "80/20 Rule",
-      icon: require("../../assets/images/8020_rule.png"),
+      icon: require("../assets/images/8020_rule.png"),
       colors: ["bg-blue-100", "bg-blue-200"],
     },
     {
       id: 2,
       title: "Pomodoro",
-      icon: require("../../assets/images/pomodoro.png"),
+      icon: require("../assets/images/pomodoro.png"),
       colors: ["bg-green-100", "bg-green-200"],
+      route: "/timer", // Add route to timer.tsx
     },
     {
       id: 3,
       title: "Custom",
-      icon: require("../../assets/images/custom.png"),
+      icon: require("../assets/images/custom.png"),
       colors: ["bg-yellow-100", "bg-yellow-200"],
+      route: "/(tabs)/custom", // Route to custom tab
     },
   ];
+
+  // Add function to handle navigation
+  const handleToolPress = (tool: Tool) => {
+    if (tool.route) {
+      console.log("Navigating to:", tool.route);
+      router.push(tool.route);
+    }
+  };
 
   const renderIcon = (tool: Tool) => {
     return (
@@ -68,6 +82,7 @@ export default function Tools() {
               tw`${tool.colors[0]}`,
             ]}
             activeOpacity={0.7}
+            onPress={() => handleToolPress(tool)} // Add onPress handler
           >
             {renderIcon(tool)}
             <Text style={tw`text-center mt-2 font-medium text-lg`}>
