@@ -17,6 +17,7 @@ export interface Subtask {
   id: string;
   title: string;
   completed: boolean;
+  priority: "Low" | "Medium" | "High";
 }
 
 export interface Task {
@@ -41,6 +42,7 @@ export const taskService = {
       id: `subtask_${Date.now()}_${index}`,
       title: subtaskTitle,
       completed: false,
+      priority: "Low",
     }));
 
     const taskData = {
@@ -130,5 +132,30 @@ export const taskService = {
   // Delete a task
   async deleteTask(taskId: string) {
     await deleteDoc(doc(db, "tasks", taskId));
+  },
+
+  // Update subtask priority
+  async updateSubtaskPriority(
+    taskId: string,
+    subtaskId: string,
+    priority: "Low" | "Medium" | "High"
+  ) {
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated");
+
+    // Get current task data
+    const tasks = await this.getUserTasks();
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) throw new Error("Task not found");
+
+    // Update the subtask priority
+    const updatedSubtasks = task.subtasks.map((subtask) =>
+      subtask.id === subtaskId ? { ...subtask, priority } : subtask
+    );
+
+    await updateDoc(doc(db, "tasks", taskId), {
+      subtasks: updatedSubtasks,
+      updatedAt: Timestamp.now(),
+    });
   },
 };

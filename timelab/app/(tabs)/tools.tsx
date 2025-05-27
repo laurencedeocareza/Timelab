@@ -51,7 +51,7 @@ export default function Tools() {
   const handleToolPress = (tool: Tool) => {
     if (tool.route) {
       console.log("Navigating to:", tool.route);
-      router.push(tool.route);
+      router.push(tool.route as any);
     }
   };
 
@@ -68,7 +68,9 @@ export default function Tools() {
       );
     } else if (tool.id === 2) {
       return (
-        <View style={tw`w-12 h-12 bg-yellow-400 rounded-full items-center justify-center`}>
+        <View
+          style={tw`w-12 h-12 bg-yellow-400 rounded-full items-center justify-center`}
+        >
           <View style={tw`absolute right-1 top-1`}>
             <Text style={tw`text-blue-400 text-sm font-bold`}>z</Text>
             <Text style={tw`text-blue-400 text-lg font-bold ml-2`}>z</Text>

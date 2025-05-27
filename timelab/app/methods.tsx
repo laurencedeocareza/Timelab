@@ -24,23 +24,31 @@ export default function Tools() {
   const tools: Tool[] = [
     {
       id: 1,
-      title: "80/20 Rule",
-      icon: require("../assets/images/8020_rule.png"),
-      colors: ["bg-blue-100", "bg-blue-200"],
-    },
-    {
-      id: 2,
       title: "Pomodoro",
       icon: require("../assets/images/pomodoro.png"),
       colors: ["bg-green-100", "bg-green-200"],
-      route: "/timer", // Add route to timer.tsx
+      route: "/method-detail?type=pomodoro",
+    },
+    {
+      id: 2,
+      title: "Timeboxing",
+      icon: require("../assets/images/timeboxing.png"),
+      colors: ["bg-blue-100", "bg-blue-200"],
+      route: "/method-detail?type=timeboxing",
     },
     {
       id: 3,
+      title: "Flowtime",
+      icon: require("../assets/images/flowtime.png"),
+      colors: ["bg-purple-100", "bg-purple-200"],
+      route: "/method-detail?type=flowtime",
+    },
+    {
+      id: 4,
       title: "Custom",
-      icon: require("../assets/images/custom.png"),
+      icon: require("../assets/images/custom-icon.png"),
       colors: ["bg-yellow-100", "bg-yellow-200"],
-      route: "/(tabs)/custom", // Route to custom tab
+      route: "/(tabs)/custom",
     },
   ];
 
@@ -48,18 +56,14 @@ export default function Tools() {
   const handleToolPress = (tool: Tool) => {
     if (tool.route) {
       console.log("Navigating to:", tool.route);
-      router.push(tool.route);
+      router.push(tool.route as any);
     }
   };
 
   const renderIcon = (tool: Tool) => {
     return (
       <View style={tw`w-12 h-12 items-center justify-center`}>
-        <Image
-          source={tool.icon}
-          style={tw`w-10 h-10`}
-          resizeMode="contain"
-        />
+        <Image source={tool.icon} style={tw`w-10 h-10`} resizeMode="contain" />
       </View>
     );
   };

@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { customTimerService } from "../lib/customTimerService";
 
 // Get screen dimensions
 const { width } = Dimensions.get("window");
@@ -32,8 +33,14 @@ const techniques = {
     color: "#4682B4",
   },
   flowtime: {
+    name: "Flowtime",
     icon: "water",
     color: "#6A5ACD",
+  },
+  custom: {
+    name: "Custom",
+    icon: "settings-outline",
+    color: "#F59E0B",
   },
 };
 
@@ -41,6 +48,13 @@ export default function TaskDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const taskId = params.id?.toString() || "";
+  const [currentPriority, setCurrentPriority] = useState("Medium");
+  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
+  const [customSessions, setCustomSessions] = useState<any[]>([]);
+  const [selectedCustomSession, setSelectedCustomSession] = useState<
+    string | null
+  >(null);
+  const [showCustomSelector, setShowCustomSelector] = useState(false);
 
   // State for Firebase data
   const [taskDetails, setTaskDetails] = useState<Task | null>(null);
@@ -50,6 +64,17 @@ export default function TaskDetailsScreen() {
 
   // Load task data from Firebase
   useEffect(() => {
+    const loadCustomSessions = async () => {
+      try {
+        const sessions = await customTimerService.getUserCustomSessions();
+        setCustomSessions(sessions);
+      } catch (error) {
+        console.error("Error loading custom sessions:", error);
+      }
+    };
+
+    loadCustomSessions();
+
     const loadTask = async () => {
       try {
         const tasks = await taskService.getUserTasks();
@@ -88,7 +113,21 @@ export default function TaskDetailsScreen() {
       console.error("Error updating subtask:", error);
     }
   };
-
+  const handleSubtaskPriorityChange = async (
+    subtaskId: string,
+    priority: "Low" | "Medium" | "High"
+  ) => {
+    try {
+      await taskService.updateSubtaskPriority(taskId, subtaskId, priority);
+      // Reload task data
+      const tasks = await taskService.getUserTasks();
+      const updatedTask = tasks.find((t) => t.id === taskId);
+      setTaskDetails(updatedTask || null);
+      setEditingSubtaskId(null);
+    } catch (error) {
+      console.error("Error updating subtask priority:", error);
+    }
+  };
   // Progress indicators
   const progressSteps = [
     "Not Started",
@@ -193,7 +232,31 @@ export default function TaskDetailsScreen() {
             </View>
           </View>
         </View>
-
+        {/* Priority selector */}
+        <View style={styles.priorityContainer}>
+          <Text style={styles.sectionTitle}>Priority Level</Text>
+          <View style={styles.priorityRow}>
+            {["Low", "Medium", "High"].map((priority) => (
+              <TouchableOpacity
+                key={priority}
+                style={[
+                  styles.priorityButton,
+                  currentPriority === priority && styles.selectedPriority,
+                ]}
+                onPress={() => setCurrentPriority(priority)}
+              >
+                <Text
+                  style={[
+                    styles.priorityText,
+                    currentPriority === priority && styles.selectedPriorityText,
+                  ]}
+                >
+                  {priority}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
         {/* Technique selector */}
         <View style={styles.techniqueContainer}>
           <Text style={styles.sectionTitle}>Focus Technique</Text>
@@ -208,30 +271,50 @@ export default function TaskDetailsScreen() {
                     borderWidth: 2,
                   },
                 ]}
-                onPress={() =>
-                  setCurrentTechnique(key as keyof typeof techniques)
-                }
+                onPress={() => {
+                  setCurrentTechnique(key as keyof typeof techniques);
+                  if (key === "custom") {
+                    setShowCustomSelector(true);
+                  }
+                }}
               >
-                {key === "flowtime" ? (
-                  <MaterialCommunityIcons
-                    name={tech.icon as any}
-                    size={24}
-                    color={tech.color}
-                  />
-                ) : (
-                  <Ionicons
-                    name={tech.icon as any}
-                    size={24}
-                    color={tech.color}
-                  />
-                )}
+                <Ionicons
+                  name={tech.icon as any}
+                  size={24}
+                  color={tech.color}
+                />
                 <Text style={[styles.techniqueName, { color: tech.color }]}>
-                  {"name" in tech
-                    ? tech.name
-                    : key.charAt(0).toUpperCase() + key.slice(1)}
+                  {tech.name}
                 </Text>
               </TouchableOpacity>
             ))}
+            {/* Custom Session Selector */}
+            {showCustomSelector && (
+              <View style={styles.customSelector}>
+                <Text style={styles.customSelectorTitle}>
+                  Select Custom Session:
+                </Text>
+                {customSessions.map((session) => (
+                  <TouchableOpacity
+                    key={session.id}
+                    style={[
+                      styles.customSessionOption,
+                      selectedCustomSession === session.id &&
+                        styles.selectedCustomSession,
+                    ]}
+                    onPress={() => {
+                      setSelectedCustomSession(session.id);
+                      setShowCustomSelector(false);
+                    }}
+                  >
+                    <Text style={styles.customSessionName}>{session.name}</Text>
+                    <Text style={styles.customSessionDetails}>
+                      {session.intervals.length} intervals
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
         </View>
 
@@ -239,14 +322,17 @@ export default function TaskDetailsScreen() {
         <View style={styles.subtasksContainer}>
           <Text style={styles.sectionTitle}>Subtasks</Text>
           <FlatList
-            data={taskDetails.subtasks}
+            data={[
+              ...taskDetails.subtasks.filter((item) => !item.completed),
+              ...taskDetails.subtasks.filter((item) => item.completed),
+            ]}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.subtaskItem}
-                onPress={() => handleSubtaskPress(item)}
-              >
-                <View style={styles.subtaskContent}>
+              <View style={styles.subtaskItem}>
+                <TouchableOpacity
+                  style={styles.subtaskContent}
+                  onPress={() => handleSubtaskPress(item)}
+                >
                   <View style={styles.subtaskLeft}>
                     <View
                       style={[
@@ -273,8 +359,41 @@ export default function TaskDetailsScreen() {
                     </Text>
                     <Ionicons name="chevron-forward" size={18} color="#999" />
                   </View>
+                </TouchableOpacity>
+
+                {/* Priority selector for each subtask */}
+                <View style={styles.subtaskPriorityContainer}>
+                  <Text style={styles.subtaskPriorityLabel}>Priority:</Text>
+                  <View style={styles.subtaskPriorityButtons}>
+                    {["Low", "Medium", "High"].map((priority) => (
+                      <TouchableOpacity
+                        key={priority}
+                        style={[
+                          styles.subtaskPriorityButton,
+                          (item as any).priority === priority &&
+                            styles.selectedSubtaskPriority,
+                        ]}
+                        onPress={() =>
+                          handleSubtaskPriorityChange(
+                            item.id,
+                            priority as "Low" | "Medium" | "High"
+                          )
+                        }
+                      >
+                        <Text
+                          style={[
+                            styles.subtaskPriorityText,
+                            (item as any).priority === priority &&
+                              styles.selectedSubtaskPriorityText,
+                          ]}
+                        >
+                          {priority}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 </View>
-              </TouchableOpacity>
+              </View>
             )}
             style={styles.subtasksList}
           />
@@ -284,14 +403,16 @@ export default function TaskDetailsScreen() {
         <TouchableOpacity
           style={styles.startButton}
           onPress={() => {
-            const firstIncomplete = taskDetails.subtasks.find(
-              (st) => !st.completed
-            );
-            if (firstIncomplete) {
-              handleSubtaskPress(firstIncomplete);
-            } else {
-              handleSubtaskPress(taskDetails.subtasks[0]);
-            }
+            router.push({
+              pathname: "/timer",
+              params: {
+                taskId: taskDetails.id,
+                taskTitle: taskDetails.title,
+                technique: currentTechnique,
+                customSessionId: selectedCustomSession,
+                subtasks: JSON.stringify(taskDetails.subtasks),
+              },
+            });
           }}
         >
           {currentTechnique === "flowtime" ? (
@@ -491,5 +612,113 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 10,
+  },
+  priorityContainer: {
+    marginBottom: 20,
+  },
+  priorityRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  priorityButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 12,
+    marginHorizontal: 5,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  selectedPriority: {
+    backgroundColor: "#2A2A5A",
+    borderColor: "#2A2A5A",
+  },
+  priorityText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#2A2A5A",
+  },
+  selectedPriorityText: {
+    color: "white",
+  },
+  subtaskPriorityContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#F3F4F6",
+  },
+  subtaskPriorityLabel: {
+    fontSize: 12,
+    color: "#6B7280",
+    fontWeight: "500",
+  },
+  subtaskPriorityButtons: {
+    flexDirection: "row",
+  },
+  subtaskPriorityButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginLeft: 4,
+    backgroundColor: "#F3F4F6",
+  },
+  selectedSubtaskPriority: {
+    backgroundColor: "#2A2A5A",
+  },
+  subtaskPriorityText: {
+    fontSize: 10,
+    color: "#6B7280",
+    fontWeight: "500",
+  },
+  selectedSubtaskPriorityText: {
+    color: "white",
+  },
+  customSelector: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  customSelectorTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#2A2A5A",
+    marginBottom: 8,
+  },
+  customSessionOption: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: "#F9FAFB",
+  },
+  selectedCustomSession: {
+    backgroundColor: "#F0F4FF",
+    borderWidth: 1,
+    borderColor: "#4361EE",
+  },
+  customSessionName: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#2A2A5A",
+  },
+  customSessionDetails: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 2,
   },
 });
