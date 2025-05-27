@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,9 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { taskService, Task } from "../../lib/taskService";
+import AddTaskModal from "../../components/AddTaskModal";
 
 const { width } = Dimensions.get("window");
 
@@ -31,7 +34,20 @@ const months = [
 ];
 
 export default function Dashboard() {
+  const router = useRouter();
   const [username, setUsername] = useState("Samantha");
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = taskService.subscribeToUserTasks((userTasks) => {
+      setTasks(userTasks);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Simple bar chart component that doesn't use SVG
   const SimpleBarChart = () => {
@@ -126,56 +142,80 @@ export default function Dashboard() {
 
         {/* Tasks Section */}
         <View style={styles.tasksSection}>
-          <Text style={styles.sectionTitle}>Personal Tasks</Text>
+          <View style={styles.tasksSectionHeader}>
+            <Text style={styles.sectionTitle}>Personal Tasks</Text>
+            <TouchableOpacity
+              style={styles.addTaskButton}
+              onPress={() => setShowAddTaskModal(true)}
+            >
+              <Ionicons name="add" size={20} color="#4361EE" />
+            </TouchableOpacity>
+          </View>
 
-          {/* Task Item 1 */}
-          <View style={styles.taskItem}>
-            <View style={[styles.taskIcon, { backgroundColor: "#F9703B" }]}>
-              <Text style={styles.taskIconText}>N</Text>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading tasks...</Text>
             </View>
-            <View style={styles.taskContent}>
-              <Text style={styles.taskTitle}>
-                NDA Review for website project
+          ) : tasks.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="clipboard-outline" size={48} color="#D1D5DB" />
+              <Text style={styles.emptyText}>No tasks yet</Text>
+              <Text style={styles.emptySubtext}>
+                Tap the + button to add your first task
               </Text>
-              <Text style={styles.taskTime}>Today · 1pm</Text>
             </View>
-            <View style={styles.taskStatus}>
-              <View style={styles.taskStatusDot} />
-            </View>
-          </View>
-
-          {/* Task Item 2 */}
-          <View style={styles.taskItem}>
-            <View style={[styles.taskIcon, { backgroundColor: "#4361EE" }]}>
-              <Ionicons name="mail-outline" size={16} color="#fff" />
-            </View>
-            <View style={styles.taskContent}>
-              <Text style={styles.taskTitle}>
-                Email Reply for Green Project
-              </Text>
-              <Text style={styles.taskTime}>Today · 1pm</Text>
-            </View>
-            <View style={styles.taskStatus}>
-              <View style={styles.taskStatusDot} />
-            </View>
-          </View>
-
-          {/* Task Item 3 */}
-          <View style={styles.taskItem}>
-            <View style={[styles.taskIcon, { backgroundColor: "#10B981" }]}>
-              <Ionicons name="call-outline" size={16} color="#fff" />
-            </View>
-            <View style={styles.taskContent}>
-              <Text style={styles.taskTitle}>Call with design team</Text>
-              <Text style={styles.taskTime}>Tomorrow · 10am</Text>
-            </View>
-            <View style={styles.taskStatus}>
-              <View
-                style={[styles.taskStatusDot, { backgroundColor: "#E5E7EB" }]}
-              />
-            </View>
-          </View>
+          ) : (
+            tasks.map((task) => (
+              <TouchableOpacity
+                key={task.id}
+                style={styles.taskItem}
+                onPress={() => router.push(`/tasks?id=${task.id}`)}
+              >
+                <View
+                  style={[
+                    styles.taskIcon,
+                    {
+                      backgroundColor:
+                        task.status === "completed" ? "#10B981" : "#F9703B",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={task.status === "completed" ? "checkmark" : "time"}
+                    size={16}
+                    color="#fff"
+                  />
+                </View>
+                <View style={styles.taskContent}>
+                  <Text style={styles.taskTitle}>{task.title}</Text>
+                  <Text style={styles.taskTime}>
+                    {task.status === "completed" ? "Completed" : "In Progress"}{" "}
+                    · {task.completedSubtasks}/{task.totalSubtasks} subtasks
+                  </Text>
+                </View>
+                <View style={styles.taskStatus}>
+                  <View
+                    style={[
+                      styles.taskStatusDot,
+                      {
+                        backgroundColor:
+                          task.status === "completed" ? "#10B981" : "#F9703B",
+                      },
+                    ]}
+                  />
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
+        {/* Add Task Modal */}
+        <AddTaskModal
+          visible={showAddTaskModal}
+          onClose={() => setShowAddTaskModal(false)}
+          onTaskAdded={() => {
+            // Tasks will update automatically via the real-time listener
+          }}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -428,5 +468,44 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
+  },
+  // Add these new styles to your existing styles object
+  tasksSectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  addTaskButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#F0F4FF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: "center",
+  },
+  loadingText: {
+    color: "#6B7280",
+    fontSize: 16,
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#374151",
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: "#6B7280",
+    marginTop: 4,
+    textAlign: "center",
   },
 });
