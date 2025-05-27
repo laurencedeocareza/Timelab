@@ -233,7 +233,7 @@ export default function TaskDetailsScreen() {
           </View>
         </View>
         {/* Priority selector */}
-        <View style={styles.priorityContainer}>
+        {/* <View style={styles.priorityContainer}>
           <Text style={styles.sectionTitle}>Priority Level</Text>
           <View style={styles.priorityRow}>
             {["Low", "Medium", "High"].map((priority) => (
@@ -256,7 +256,7 @@ export default function TaskDetailsScreen() {
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        </View> */}
         {/* Technique selector */}
         <View style={styles.techniqueContainer}>
           <Text style={styles.sectionTitle}>Focus Technique</Text>

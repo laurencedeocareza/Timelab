@@ -1,245 +1,352 @@
-import type React from "react";
+import React, { useState, useEffect } from "react";
+import { auth } from "../../FirebaseConfig";
+import { useRouter } from "expo-router";
 import {
   View,
   Text,
   TouchableOpacity,
   SafeAreaView,
-  Image,
   ScrollView,
+  TextInput,
+  Alert,
+  Modal,
 } from "react-native";
 import tw from "tailwind-react-native-classnames";
-import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { userService } from "../../lib/userService";
+import { taskService, Task } from "../../lib/taskService";
 
-// Component Types
-interface HistoryItemProps {
-  title: string;
-  timestamp: string;
-  profileImage: any;
-  userName: string;
+interface EditProfileModalProps {
+  visible: boolean;
+  onClose: () => void;
+  userProfile: any;
+  onProfileUpdated: () => void;
 }
 
-interface ActiveTaskItemProps {
-  title: string;
-  completed: boolean;
-  dueDate: string;
-}
-
-interface ProfileHeaderProps {
-  name: string;
-  email: string;
-  profileImage: any;
-  goals: number;
-  activeTasks: number;
-  finished: number;
-}
-
-interface SectionHeaderProps {
-  title: string;
-}
-
-// Reusable Components (defined within the same file)
-const HistoryItem: React.FC<HistoryItemProps> = ({
-  title,
-  timestamp,
-  profileImage,
-  userName,
+const EditProfileModal: React.FC<EditProfileModalProps> = ({
+  visible,
+  onClose,
+  userProfile,
+  onProfileUpdated,
 }) => {
-  return (
-    <View style={tw`mb-4 border-b border-gray-100 pb-4`}>
-      <View style={tw`flex-row items-center mb-2`}>
-        <Image
-          source={profileImage}
-          style={tw`w-10 h-10 rounded-full`}
-          resizeMode="cover"
-        />
-        <View style={tw`ml-3`}>
-          <Text style={tw`text-gray-800 font-medium`}>{userName}</Text>
-          <Text style={tw`text-gray-500 text-xs`}>{timestamp}</Text>
-        </View>
-      </View>
-      <Text style={tw`text-gray-800 mb-2`}>{title}</Text>
-    </View>
-  );
-};
+  const [fullName, setFullName] = useState(userProfile?.fullName || "");
+  const [email, setEmail] = useState(userProfile?.email || "");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-const ActiveTaskItem: React.FC<ActiveTaskItemProps> = ({
-  title,
-  completed,
-  dueDate,
-}) => {
-  return (
-    <View style={tw`flex-row items-center mb-4 bg-gray-50 p-3 rounded-lg`}>
-      <View
-        style={tw`${
-          completed ? "bg-green-500" : "bg-gray-300"
-        } w-8 h-8 rounded-full items-center justify-center mr-3`}
-      >
-        {completed && <Text style={tw`text-white font-bold`}>✓</Text>}
-      </View>
-      <View style={tw`flex-1`}>
-        <Text style={tw`text-gray-800 font-medium`}>{title}</Text>
-        <View style={tw`flex-row items-center mt-1`}>
-          <Text style={tw`text-gray-500 text-xs`}>⏱ {dueDate}</Text>
-        </View>
-      </View>
-    </View>
-  );
-};
+  useEffect(() => {
+    if (userProfile) {
+      setFullName(userProfile.fullName || "");
+      setEmail(userProfile.email || "");
+    }
+  }, [userProfile]);
 
-const ProfileHeader: React.FC<ProfileHeaderProps> = ({
-  name,
-  email,
-  profileImage,
-  goals,
-  activeTasks,
-  finished,
-}) => {
+  const handleSave = async () => {
+    if (!fullName.trim()) {
+      Alert.alert("Error", "Please enter your full name");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Update profile name
+      await userService.updateUserProfileName(fullName.trim());
+
+      // Update email if changed
+      if (email !== userProfile?.email && currentPassword) {
+        await userService.updateUserEmail(email, currentPassword);
+      }
+
+      // Update password if provided
+      if (newPassword && currentPassword) {
+        await userService.updateUserPassword(currentPassword, newPassword);
+      }
+
+      Alert.alert("Success", "Profile updated successfully!");
+      onProfileUpdated();
+      onClose();
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to update profile");
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
-    <View style={[tw`px-4 pt-6 pb-6`, { backgroundColor: "#0098da" }]}>
-      {/* Profile Picture and Info */}
-      <View style={tw`items-center`}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+    >
+      <SafeAreaView style={tw`flex-1 bg-white`}>
         <View
-          style={tw`w-24 h-24 rounded-full bg-gray-200 overflow-hidden border-2 border-white`}
+          style={tw`flex-row items-center justify-between p-4 border-b border-gray-200`}
         >
-          <Image
-            source={profileImage}
-            style={tw`w-full h-full`}
-            resizeMode="cover"
-          />
+          <TouchableOpacity onPress={onClose}>
+            <Text style={tw`text-blue-500 text-lg`}>Cancel</Text>
+          </TouchableOpacity>
+          <Text style={tw`text-lg font-bold`}>Edit Profile</Text>
+          <TouchableOpacity onPress={handleSave} disabled={loading}>
+            <Text
+              style={tw`text-blue-500 text-lg ${loading ? "opacity-50" : ""}`}
+            >
+              {loading ? "Saving..." : "Save"}
+            </Text>
+          </TouchableOpacity>
         </View>
-        <Text style={tw`mt-4 text-xl font-bold text-white`}>{name}</Text>
-        <Text style={tw`text-white text-sm opacity-80`}>{email}</Text>
-      </View>
 
-      {/* Stats */}
-      <View style={tw`flex-row justify-between mt-6`}>
-        <View style={tw`items-center`}>
-          <Text style={tw`text-white font-bold text-xl`}>{goals}</Text>
-          <Text style={tw`text-white text-xs uppercase`}>Goals</Text>
-        </View>
-        <View style={tw`items-center`}>
-          <Text style={tw`text-white font-bold text-xl`}>{activeTasks}</Text>
-          <Text style={tw`text-white text-xs uppercase`}>Active Tasks</Text>
-        </View>
-        <View style={tw`items-center`}>
-          <Text style={tw`text-white font-bold text-xl`}>{finished}</Text>
-          <Text style={tw`text-white text-xs uppercase`}>Finished Tasks</Text>
-        </View>
-      </View>
-    </View>
+        <ScrollView style={tw`flex-1 p-4`}>
+          <View style={tw`mb-4`}>
+            <Text style={tw`text-gray-700 font-medium mb-2`}>Full Name</Text>
+            <TextInput
+              style={tw`border border-gray-300 rounded-lg p-3 text-base`}
+              value={fullName}
+              onChangeText={setFullName}
+              placeholder="Enter your full name"
+            />
+          </View>
+
+          <View style={tw`mb-4`}>
+            <Text style={tw`text-gray-700 font-medium mb-2`}>Email</Text>
+            <TextInput
+              style={tw`border border-gray-300 rounded-lg p-3 text-base`}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Enter your email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+
+          <View style={tw`mb-4`}>
+            <Text style={tw`text-gray-700 font-medium mb-2`}>
+              Current Password
+            </Text>
+            <Text style={tw`text-gray-500 text-sm mb-2`}>
+              Required for email/password changes
+            </Text>
+            <TextInput
+              style={tw`border border-gray-300 rounded-lg p-3 text-base`}
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              placeholder="Enter current password"
+              secureTextEntry
+            />
+          </View>
+
+          <View style={tw`mb-4`}>
+            <Text style={tw`text-gray-700 font-medium mb-2`}>
+              New Password (Optional)
+            </Text>
+            <TextInput
+              style={tw`border border-gray-300 rounded-lg p-3 text-base`}
+              value={newPassword}
+              onChangeText={setNewPassword}
+              placeholder="Enter new password"
+              secureTextEntry
+            />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
   );
 };
 
-const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => {
-  return <Text style={tw`text-gray-800 font-bold text-lg mb-4`}>{title}</Text>;
-};
-
-// Main Profile Component
 export default function Profile() {
-  const navigation = useNavigation<any>(); // <-- Fix: add <any>
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const router = useRouter();
 
-  // Sample data for active tasks
-  const activeTasks = [
-    {
-      id: 1,
-      title: "Complete 10km run",
-      completed: false,
-      dueDate: "Tomorrow",
-    },
-    { id: 2, title: "Cycling training", completed: true, dueDate: "Today" },
-    { id: 3, title: "Mountain trail", completed: false, dueDate: "Next week" },
-  ];
+  const loadUserData = async () => {
+    try {
+      const [profile, userTasks] = await Promise.all([
+        userService.getCurrentUserProfile(),
+        taskService.getUserTasks(),
+      ]);
 
-  // Sample data for history
-  const historyData = [
-    {
-      id: 1,
-      title: "Cycled",
-      timestamp: "2 days ago",
-    },
-    {
-      id: 2,
-      title: "Reported closure",
-      timestamp: "3 days ago",
-    },
-    {
-      id: 3,
-      title: "Completed trail",
-      timestamp: "5 days ago",
-    },
-  ];
+      setUserProfile(profile);
+      setTasks(userTasks);
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const profileImage = require("../../assets/images/profile.png");
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={tw`flex-1 bg-gray-50 justify-center items-center`}>
+        <Text style={tw`text-gray-600`}>Loading profile...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const activeTasks = tasks.filter((task) => task.status !== "completed");
+  const completedTasks = tasks.filter((task) => task.status === "completed");
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      // Navigate to login screen
+      router.replace("/userInfo");
+    } catch (error) {
+      console.error("Error signing out:", error);
+      Alert.alert("Error", "Failed to sign out. Please try again.");
+    }
+  };
 
   return (
     <SafeAreaView style={tw`flex-1 bg-gray-50`}>
       <ScrollView>
-        {/* Profile Header Component */}
-        <ProfileHeader
-          name="Louis Saville"
-          email="louis@example.com"
-          profileImage={profileImage}
-          goals={3420}
-          activeTasks={461}
-          finished={348}
-        />
+        {/* Profile Header */}
+        <View style={[tw`px-4 pt-6 pb-6`, { backgroundColor: "#0098da" }]}>
+          <View style={tw`items-center`}>
+            <View
+              style={tw`w-24 h-24 rounded-full bg-white bg-opacity-20 items-center justify-center`}
+            >
+              <Text style={tw`text-3xl font-bold text-white`}>
+                {userProfile?.fullName?.charAt(0) || "U"}
+              </Text>
+            </View>
+            <Text style={tw`mt-4 text-xl font-bold text-white`}>
+              {userProfile?.fullName || "User"}
+            </Text>
+            <Text style={tw`text-white text-sm opacity-80`}>
+              {userProfile?.email || "No email"}
+            </Text>
+          </View>
+
+          {/* Stats */}
+          <View style={tw`flex-row justify-between mt-6`}>
+            <View style={tw`items-center`}>
+              <Text style={tw`text-white font-bold text-xl`}>
+                {tasks.length}
+              </Text>
+              <Text style={tw`text-white text-xs uppercase`}>Total Tasks</Text>
+            </View>
+            <View style={tw`items-center`}>
+              <Text style={tw`text-white font-bold text-xl`}>
+                {activeTasks.length}
+              </Text>
+              <Text style={tw`text-white text-xs uppercase`}>Active Tasks</Text>
+            </View>
+            <View style={tw`items-center`}>
+              <Text style={tw`text-white font-bold text-xl`}>
+                {completedTasks.length}
+              </Text>
+              <Text style={tw`text-white text-xs uppercase`}>Completed</Text>
+            </View>
+          </View>
+        </View>
 
         {/* Content Container */}
         <View style={tw`bg-white rounded-t-3xl px-4 pt-6 -mt-4`}>
-          {/* Action Buttons */}
+          {/* Edit Profile Button */}
           <View style={tw`mb-6`}>
             <TouchableOpacity
-              style={tw`bg-blue-500 py-3 rounded-lg items-center mb-4 shadow`}
+              style={tw`bg-blue-500 py-3 rounded-lg items-center shadow`}
+              onPress={() => setShowEditModal(true)}
             >
               <Text style={tw`text-white font-bold text-base`}>
                 Edit Profile
               </Text>
             </TouchableOpacity>
+          </View>
+
+          {/* Logout Button - Add this */}
+          <View style={tw`mb-6`}>
             <TouchableOpacity
-              style={tw`bg-blue-500 py-3 rounded-lg items-center shadow mb-4`}
+              style={tw`bg-red-500 py-3 rounded-lg items-center shadow`}
+              onPress={handleLogout}
             >
-              <Text style={tw`text-white font-bold text-base`}>
-                Change Password
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={tw`bg-blue-500 py-3 rounded-lg items-center shadow`}
-              onPress={() => navigation.navigate("userInfo")} // <-- Add this handler
-            >
-              <Text style={tw`text-white font-bold text-base`}>
-                Change Account
-              </Text>
+              <Text style={tw`text-white font-bold text-base`}>Logout</Text>
             </TouchableOpacity>
           </View>
 
           {/* Active Tasks Section */}
           <View style={tw`mb-6`}>
-            <SectionHeader title="Active Tasks" />
-            {activeTasks.map((task) => (
-              <ActiveTaskItem
-                key={task.id}
-                title={task.title}
-                completed={task.completed}
-                dueDate={task.dueDate}
-              />
-            ))}
+            <Text style={tw`text-gray-800 font-bold text-lg mb-4`}>
+              Active Tasks
+            </Text>
+            {activeTasks.length === 0 ? (
+              <Text style={tw`text-gray-500 text-center py-4`}>
+                No active tasks
+              </Text>
+            ) : (
+              activeTasks.map((task) => (
+                <View
+                  key={task.id}
+                  style={tw`flex-row items-center mb-4 bg-gray-50 p-3 rounded-lg`}
+                >
+                  <View
+                    style={tw`bg-orange-500 w-8 h-8 rounded-full items-center justify-center mr-3`}
+                  >
+                    <Ionicons name="time" size={16} color="white" />
+                  </View>
+                  <View style={tw`flex-1`}>
+                    <Text style={tw`text-gray-800 font-medium`}>
+                      {task.title}
+                    </Text>
+                    <Text style={tw`text-gray-500 text-sm`}>
+                      {task.totalSubtasks - task.completedSubtasks}/
+                      {task.totalSubtasks} tasks left
+                    </Text>
+                  </View>
+                </View>
+              ))
+            )}
           </View>
 
           {/* History Section */}
           <View style={tw`mb-6`}>
-            <SectionHeader title="History" />
-            {historyData.map((item) => (
-              <HistoryItem
-                key={item.id}
-                title={item.title}
-                timestamp={item.timestamp}
-                profileImage={profileImage}
-                userName="Louis Saville"
-              />
-            ))}
+            <Text style={tw`text-gray-800 font-bold text-lg mb-4`}>
+              History
+            </Text>
+            {completedTasks.length === 0 ? (
+              <Text style={tw`text-gray-500 text-center py-4`}>
+                No completed tasks
+              </Text>
+            ) : (
+              completedTasks.map((task) => (
+                <View
+                  key={task.id}
+                  style={tw`mb-4 border-b border-gray-100 pb-4`}
+                >
+                  <View style={tw`flex-row items-center mb-2`}>
+                    <View
+                      style={tw`bg-green-500 w-8 h-8 rounded-full items-center justify-center mr-3`}
+                    >
+                      <Ionicons name="checkmark" size={16} color="white" />
+                    </View>
+                    <View style={tw`flex-1`}>
+                      <Text style={tw`text-gray-800 font-medium`}>
+                        {task.title}
+                      </Text>
+                      <Text style={tw`text-gray-500 text-sm`}>
+                        {task.completedSubtasks}/{task.totalSubtasks} completed
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ))
+            )}
           </View>
         </View>
       </ScrollView>
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        visible={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        userProfile={userProfile}
+        onProfileUpdated={loadUserData}
+      />
     </SafeAreaView>
   );
 }

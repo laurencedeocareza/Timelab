@@ -1,4 +1,10 @@
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  updatePassword,
+  updateEmail,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+} from "firebase/auth";
 import { db, auth } from "../FirebaseConfig";
 
 export interface UserProfile {
@@ -10,6 +16,48 @@ export interface UserProfile {
 }
 
 export const userService = {
+  // Update user email
+  async updateUserEmail(newEmail: string, currentPassword: string) {
+    const user = auth.currentUser;
+    if (!user || !user.email) throw new Error("User not authenticated");
+
+    // Re-authenticate user
+    const credential = EmailAuthProvider.credential(
+      user.email,
+      currentPassword
+    );
+    await reauthenticateWithCredential(user, credential);
+
+    // Update email in Firebase Auth
+    await updateEmail(user, newEmail);
+
+    // Update email in Firestore
+    await this.updateUserProfile(user.uid, { email: newEmail });
+  },
+
+  // Update user password
+  async updateUserPassword(currentPassword: string, newPassword: string) {
+    const user = auth.currentUser;
+    if (!user || !user.email) throw new Error("User not authenticated");
+
+    // Re-authenticate user
+    const credential = EmailAuthProvider.credential(
+      user.email,
+      currentPassword
+    );
+    await reauthenticateWithCredential(user, credential);
+
+    // Update password
+    await updatePassword(user, newPassword);
+  },
+
+  // Update user profile name
+  async updateUserProfileName(fullName: string) {
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated");
+
+    await this.updateUserProfile(user.uid, { fullName });
+  },
   // Create user profile in Firestore
   async createUserProfile(uid: string, fullName: string, email: string) {
     const userRef = doc(db, "users", uid);
