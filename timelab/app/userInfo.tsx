@@ -18,6 +18,7 @@ import {
 } from "firebase/auth";
 import { auth } from "../FirebaseConfig";
 import { Alert } from "react-native";
+import { userService } from "../lib/userService";
 
 const { width } = Dimensions.get("window");
 
@@ -86,6 +87,13 @@ export default function AuthScreens() {
         signUpData.password
       );
 
+      // Store user profile in Firestore
+      await userService.createUserProfile(
+        userCredential.user.uid,
+        signUpData.fullName,
+        signUpData.email
+      );
+
       console.log("User created successfully:", userCredential.user.uid);
       Alert.alert("Success", "Account created successfully!", [
         {
@@ -127,12 +135,26 @@ export default function AuthScreens() {
       console.error("Sign in error:", error);
       let errorMessage = "An error occurred during sign in";
 
-      if (error.code === "auth/user-not-found") {
-        errorMessage = "No account found with this email";
-      } else if (error.code === "auth/wrong-password") {
-        errorMessage = "Incorrect password";
-      } else if (error.code === "auth/invalid-email") {
-        errorMessage = "Invalid email address";
+      // Handle all possible Firebase auth error codes
+      switch (error.code) {
+        case "auth/user-not-found":
+        case "auth/wrong-password":
+        case "auth/invalid-credential":
+        case "auth/invalid-email":
+          errorMessage = "Incorrect email or password";
+          break;
+        case "auth/user-disabled":
+          errorMessage = "This account has been disabled";
+          break;
+        case "auth/too-many-requests":
+          errorMessage =
+            "Too many failed login attempts. Please try again later";
+          break;
+        case "auth/network-request-failed":
+          errorMessage = "Network error. Please check your connection";
+          break;
+        default:
+          errorMessage = "Sign in failed. Please try again";
       }
 
       Alert.alert("Sign In Error", errorMessage);

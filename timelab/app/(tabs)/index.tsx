@@ -14,6 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { taskService, Task } from "../../lib/taskService";
 import AddTaskModal from "../../components/AddTaskModal";
+import { userService } from "../../lib/userService";
+import TaskProgressChart from "../../components/TaskProgressChart";
 
 const { width } = Dimensions.get("window");
 
@@ -35,7 +37,8 @@ const months = [
 
 export default function Dashboard() {
   const router = useRouter();
-  const [username, setUsername] = useState("Samantha");
+  const [username, setUsername] = useState("User");
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -45,42 +48,22 @@ export default function Dashboard() {
       setTasks(userTasks);
       setLoading(false);
     });
+    const loadUserProfile = async () => {
+      try {
+        const profile = await userService.getCurrentUserProfile();
+        if (profile) {
+          setUserProfile(profile);
+          setUsername(profile.fullName.split(" ")[0]); // Use first name only
+        }
+      } catch (error) {
+        console.error("Error loading user profile:", error);
+      }
+    };
+
+    loadUserProfile();
 
     return () => unsubscribe();
   }, []);
-
-  // Simple bar chart component that doesn't use SVG
-  const SimpleBarChart = () => {
-    const data = [20, 45, 28, 80, 99, 43];
-    const maxValue = Math.max(...data);
-
-    return (
-      <View style={styles.simpleChart}>
-        <View style={styles.chartBars}>
-          {data.map((value, index) => (
-            <View key={index} style={styles.barContainer}>
-              <View
-                style={[
-                  styles.bar,
-                  {
-                    height: `${(value / maxValue) * 100}%`,
-                    backgroundColor: "#4361EE",
-                  },
-                ]}
-              />
-            </View>
-          ))}
-        </View>
-        <View style={styles.chartLabels}>
-          {["Jan", "Feb", "Mar", "Apr", "May", "Jun"].map((month, index) => (
-            <Text key={index} style={styles.chartLabel}>
-              {month}
-            </Text>
-          ))}
-        </View>
-      </View>
-    );
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -134,10 +117,8 @@ export default function Dashboard() {
 
         {/* Chart Section */}
         <View style={styles.chartSection}>
-          <Text style={styles.sectionTitle}>Performance Overview</Text>
-          <View style={styles.chartCard}>
-            <SimpleBarChart />
-          </View>
+          <Text style={styles.sectionTitle}>Task Progress Overview</Text>
+          <TaskProgressChart tasks={tasks} />
         </View>
 
         {/* Tasks Section */}
@@ -335,52 +316,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#111827",
     marginBottom: 15,
-  },
-  chartCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  simpleChart: {
-    height: 220,
-    width: "100%",
-    paddingTop: 20,
-  },
-  chartBars: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    height: 180,
-    width: "100%",
-    paddingHorizontal: 10,
-  },
-  barContainer: {
-    flex: 1,
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    paddingHorizontal: 5,
-  },
-  bar: {
-    width: 20,
-    borderRadius: 10,
-  },
-  chartLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 10,
-    marginTop: 10,
-  },
-  chartLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-    textAlign: "center",
-    flex: 1,
   },
   tasksSection: {
     marginTop: 30,

@@ -12,7 +12,20 @@
           "package_name": "com.laurencejade123.timelab"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1015767007047-kotqk826eejq34dr5v8v38be85c1esp5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.laurencejade123.timelab",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "1015767007047-8pjrorck0h2h05e7t2ff9i9thjim0lg3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDiCwoXf9bSnzhP_zwVmGvYMluxkm9ii9w"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1015767007047-8pjrorck0h2h05e7t2ff9i9thjim0lg3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
