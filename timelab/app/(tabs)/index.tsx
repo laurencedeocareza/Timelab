@@ -16,6 +16,9 @@ import { taskService, Task } from "../../lib/taskService";
 import AddTaskModal from "../../components/AddTaskModal";
 import { userService } from "../../lib/userService";
 import TaskProgressChart from "../../components/TaskProgressChart";
+import { goalService } from "../../lib/goalService";
+import HorizontalCalendar from "../../components/HorizontalCalendar";
+import TaskProgressBar from "../../components/TaskProgressBar";
 
 const { width } = Dimensions.get("window");
 
@@ -34,14 +37,77 @@ const months = [
   { name: "November", color: "#8B5CF6", tasks: 4 },
   { name: "December", color: "#F97316", tasks: 8 },
 ];
+const monthColors = [
+  "#4361EE",
+  "#F9703B",
+  "#10B981",
+  "#8B5CF6",
+  "#EC4899",
+  "#F59E0B",
+  "#3B82F6",
+  "#EF4444",
+  "#14B8A6",
+  "#6366F1",
+  "#8B5CF6",
+  "#F97316",
+];
+interface MonthData {
+  name: string;
+  color: string;
+  tasks: number;
+  goals: number;
+  month: number;
+  year: number;
+}
 
 export default function Dashboard() {
+  const [monthlyData, setMonthlyData] = useState<MonthData[]>([]);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [tasksInDateRange, setTasksInDateRange] = useState<Task[]>([]);
   const router = useRouter();
   const [username, setUsername] = useState("User");
   const [userProfile, setUserProfile] = useState<any>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const updateTasksInDateRange = (date: Date, allTasks: Task[] = tasks) => {
+    const startDate = new Date(date.getFullYear(), date.getMonth(), 1);
+    const endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+    const tasksInRange = allTasks.filter((task) => {
+      if (!task.startDate || !task.endDate) return false;
+
+      const taskStart = task.startDate.toDate();
+      const taskEnd = task.endDate.toDate();
+
+      return taskStart <= endDate && taskEnd >= startDate;
+    });
+
+    setTasksInDateRange(tasksInRange);
+  };
+
+  const handleDateChange = (date: Date) => {
+    setSelectedDate(date);
+    updateTasksInDateRange(date);
+  };
+
+  const getTaskDates = (): Date[] => {
+    const dates: Date[] = [];
+    tasks.forEach((task) => {
+      if (task.startDate && task.endDate) {
+        const start = task.startDate.toDate();
+        const end = task.endDate.toDate();
+
+        const currentDate = new Date(start);
+        while (currentDate <= end) {
+          dates.push(new Date(currentDate));
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      }
+    });
+    return dates;
+  };
 
   useEffect(() => {
     const unsubscribe = taskService.subscribeToUserTasks((userTasks) => {
@@ -91,10 +157,14 @@ export default function Dashboard() {
           style={styles.cardsContainer}
           contentContainerStyle={styles.cardsContent}
         >
-          {months.map((month, index) => (
+          {monthlyData.map((month, index) => (
             <TouchableOpacity
               key={index}
               style={[styles.card, { backgroundColor: month.color }]}
+              onPress={() => {
+                const monthDate = new Date(month.year, month.month, 1);
+                handleDateChange(monthDate);
+              }}
             >
               <View style={styles.cardHeader}>
                 <View style={styles.cardIconContainer}>
@@ -109,11 +179,65 @@ export default function Dashboard() {
               <Text style={styles.cardTitle}>{month.name}</Text>
               <Text style={styles.cardSubtitle}>Overview</Text>
               <View style={styles.cardFooter}>
-                <Text style={styles.cardFooterText}>{month.tasks} Tasks</Text>
+                <Text style={styles.cardFooterText}>
+                  {month.tasks} Tasks • {month.goals} Goals
+                </Text>
               </View>
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* Horizontal Calendar */}
+        <HorizontalCalendar
+          onDateChange={handleDateChange}
+          selectedDate={selectedDate}
+          taskDates={getTaskDates()}
+        />
+
+        {/* Task Progress Bars */}
+        {tasksInDateRange.length > 0 && (
+          <View style={styles.taskProgressSection}>
+            <Text style={styles.sectionTitle}>Task Timeline</Text>
+            <View style={styles.taskProgressContainer}>
+              {tasksInDateRange.map((task) => {
+                if (!task.startDate || !task.endDate) return null;
+
+                const progress =
+                  (task.completedSubtasks / task.totalSubtasks) * 100;
+                const calendarStart = new Date(
+                  selectedDate.getFullYear(),
+                  selectedDate.getMonth(),
+                  1
+                );
+                const calendarEnd = new Date(
+                  selectedDate.getFullYear(),
+                  selectedDate.getMonth() + 1,
+                  0
+                );
+
+                return (
+                  <TaskProgressBar
+                    key={task.id}
+                    task={{
+                      id: task.id,
+                      title: task.title,
+                      startDate: task.startDate.toDate(),
+                      endDate: task.endDate.toDate(),
+                      progress,
+                      color:
+                        monthColors[
+                          Math.floor(Math.random() * monthColors.length)
+                        ],
+                    }}
+                    currentDate={selectedDate}
+                    calendarStartDate={calendarStart}
+                    calendarEndDate={calendarEnd}
+                  />
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         {/* Chart Section */}
         <View style={styles.chartSection}>
@@ -442,5 +566,23 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     marginTop: 4,
     textAlign: "center",
+  },
+  taskProgressSection: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  taskProgressContainer: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  taskDates: {
+    fontSize: 11,
+    color: "#9CA3AF",
   },
 });

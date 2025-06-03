@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+"use client";
+
+import { useState } from "react";
 import {
   View,
   Text,
@@ -8,9 +10,11 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { taskService } from "../lib/taskService";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 interface AddTaskModalProps {
   visible: boolean;
@@ -26,6 +30,13 @@ export default function AddTaskModal({
   const [taskTitle, setTaskTitle] = useState("");
   const [subtasks, setSubtasks] = useState<string[]>([""]);
   const [loading, setLoading] = useState(false);
+
+  // Date states
+  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [includeDates, setIncludeDates] = useState(false);
 
   const addSubtask = () => {
     setSubtasks([...subtasks, ""]);
@@ -44,6 +55,37 @@ export default function AddTaskModal({
     }
   };
 
+  const handleStartDateChange = (event: any, selectedDate?: Date) => {
+    setShowStartDatePicker(Platform.OS === "ios");
+    if (selectedDate) {
+      setStartDate(selectedDate);
+      // Auto-adjust end date if it's before start date
+      if (endDate && selectedDate > endDate) {
+        setEndDate(selectedDate);
+      }
+    }
+  };
+
+  const handleEndDateChange = (event: any, selectedDate?: Date) => {
+    setShowEndDatePicker(Platform.OS === "ios");
+    if (selectedDate) {
+      // Ensure end date is not before start date
+      if (startDate && selectedDate < startDate) {
+        Alert.alert("Invalid Date", "End date cannot be before start date");
+        return;
+      }
+      setEndDate(selectedDate);
+    }
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   const handleSubmit = async () => {
     if (!taskTitle.trim()) {
       Alert.alert("Error", "Please enter a task title");
@@ -56,11 +98,27 @@ export default function AddTaskModal({
       return;
     }
 
+    if (includeDates && (!startDate || !endDate)) {
+      Alert.alert("Error", "Please select both start and end dates");
+      return;
+    }
+
     setLoading(true);
     try {
-      await taskService.addTask(taskTitle.trim(), validSubtasks);
+      await taskService.addTask(
+        taskTitle.trim(),
+        validSubtasks,
+        includeDates ? startDate : undefined,
+        includeDates ? endDate : undefined
+      );
+
+      // Reset form
       setTaskTitle("");
       setSubtasks([""]);
+      setStartDate(new Date());
+      setEndDate(new Date());
+      setIncludeDates(false);
+
       onTaskAdded();
       onClose();
     } catch (error) {
@@ -96,6 +154,62 @@ export default function AddTaskModal({
               placeholder="Enter task title"
               placeholderTextColor="#999"
             />
+
+            {/* Date Range Toggle */}
+            <TouchableOpacity
+              style={styles.dateToggle}
+              onPress={() => setIncludeDates(!includeDates)}
+            >
+              <View style={styles.dateToggleContent}>
+                <Ionicons
+                  name={includeDates ? "checkbox" : "square-outline"}
+                  size={20}
+                  color={includeDates ? "#4361EE" : "#999"}
+                />
+                <Text style={styles.dateToggleText}>Set date range</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Date Pickers */}
+            {includeDates && (
+              <View style={styles.dateSection}>
+                <View style={styles.dateRow}>
+                  <View style={styles.dateColumn}>
+                    <Text style={styles.dateLabel}>Start Date</Text>
+                    <TouchableOpacity
+                      style={styles.dateButton}
+                      onPress={() => setShowStartDatePicker(true)}
+                    >
+                      <Text style={styles.dateButtonText}>
+                        {startDate ? formatDate(startDate) : "Select date"}
+                      </Text>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={20}
+                        color="#666"
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.dateColumn}>
+                    <Text style={styles.dateLabel}>End Date</Text>
+                    <TouchableOpacity
+                      style={styles.dateButton}
+                      onPress={() => setShowEndDatePicker(true)}
+                    >
+                      <Text style={styles.dateButtonText}>
+                        {endDate ? formatDate(endDate) : "Select date"}
+                      </Text>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={20}
+                        color="#666"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            )}
 
             <Text style={styles.label}>Subtasks</Text>
             {subtasks.map((subtask, index) => (
@@ -141,6 +255,27 @@ export default function AddTaskModal({
               </Text>
             </TouchableOpacity>
           </View>
+
+          {/* Date Pickers */}
+          {showStartDatePicker && (
+            <DateTimePicker
+              value={startDate || new Date()}
+              mode="date"
+              display="default"
+              onChange={handleStartDateChange}
+              minimumDate={new Date()}
+            />
+          )}
+
+          {showEndDatePicker && (
+            <DateTimePicker
+              value={endDate || new Date()}
+              mode="date"
+              display="default"
+              onChange={handleEndDateChange}
+              minimumDate={startDate || new Date()}
+            />
+          )}
         </View>
       </View>
     </Modal>
@@ -200,6 +335,50 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     backgroundColor: "#F9FAFB",
+  },
+  dateToggle: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  dateToggleContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  dateToggleText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: "#374151",
+  },
+  dateSection: {
+    marginBottom: 16,
+  },
+  dateRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  dateColumn: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  dateLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#374151",
+    marginBottom: 8,
+  },
+  dateButton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: "#F9FAFB",
+  },
+  dateButtonText: {
+    fontSize: 14,
+    color: "#374151",
   },
   subtaskRow: {
     flexDirection: "row",

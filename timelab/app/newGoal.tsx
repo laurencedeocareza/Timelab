@@ -11,9 +11,12 @@ import {
   Platform,
   StyleSheet,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { goalService } from "../lib/goalService";
+import { useRouter } from "expo-router";
 
 // Define types
 type RootStackParamList = {
@@ -59,12 +62,15 @@ const goalTypes: GoalType[] = [
 ];
 
 const NewGoal = ({ navigation }: NewGoalProps) => {
+  const router = useRouter();
   const [goalName, setGoalName] = useState("");
   const [goalDescription, setGoalDescription] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedGoalType, setSelectedGoalType] = useState("weekly");
   const [duration, setDuration] = useState(4);
   const [reminder, setReminder] = useState(false);
+  const [goalItems, setGoalItems] = useState<string[]>([""]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Function to handle category selection
   const handleCategorySelect = (categoryId: string) => {
@@ -82,11 +88,79 @@ const NewGoal = ({ navigation }: NewGoalProps) => {
     setDuration(newDuration);
   };
 
+  // Functions for goal items
+  const addGoalItem = () => {
+    setGoalItems([...goalItems, ""]);
+  };
+
+  const updateGoalItem = (index: number, value: string) => {
+    const updatedItems = [...goalItems];
+    updatedItems[index] = value;
+    setGoalItems(updatedItems);
+  };
+
+  const removeGoalItem = (index: number) => {
+    if (goalItems.length > 1) {
+      const updatedItems = goalItems.filter((_, i) => i !== index);
+      setGoalItems(updatedItems);
+    }
+  };
+
   // Function to handle goal creation
-  const handleCreateGoal = () => {
-    // Here you would typically save the goal data
-    // For now, we'll just navigate back
-    navigation.goBack();
+  const handleCreateGoal = async () => {
+    if (!goalName.trim()) {
+      Alert.alert("Error", "Please enter a goal name");
+      return;
+    }
+
+    if (!selectedCategory) {
+      Alert.alert("Error", "Please select a category");
+      return;
+    }
+
+    // Filter out empty goal items
+    const validGoalItems = goalItems.filter((item) => item.trim() !== "");
+    if (validGoalItems.length === 0) {
+      Alert.alert("Error", "Please add at least one goal item");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      // Get current date info
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.toLocaleString("default", { month: "long" });
+      const weekNumber = Math.ceil(now.getDate() / 7); // Simple week calculation
+
+      // Generate a unique ID for the month
+      const monthId = `${month.toLowerCase()}-${year}`;
+
+      // Add the weekly goal
+      await goalService.addWeeklyGoal(
+        goalName,
+        goalDescription || "No description provided",
+        selectedCategory,
+        monthId,
+        month,
+        year,
+        weekNumber,
+        validGoalItems
+      );
+
+      Alert.alert("Success", "Goal created successfully!", [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ]);
+    } catch (error) {
+      console.error("Error creating goal:", error);
+      Alert.alert("Error", "Failed to create goal. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -99,7 +173,8 @@ const NewGoal = ({ navigation }: NewGoalProps) => {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.closeButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => router.back()}
+            disabled={isLoading}
           >
             <Ionicons name="close-outline" size={28} color="#1F2937" />
           </TouchableOpacity>
@@ -107,8 +182,13 @@ const NewGoal = ({ navigation }: NewGoalProps) => {
           <TouchableOpacity
             style={styles.saveButton}
             onPress={handleCreateGoal}
+            disabled={isLoading}
           >
-            <Text style={styles.saveButtonText}>Save</Text>
+            <Text
+              style={[styles.saveButtonText, isLoading && { opacity: 0.5 }]}
+            >
+              {isLoading ? "Saving..." : "Save"}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -121,6 +201,7 @@ const NewGoal = ({ navigation }: NewGoalProps) => {
               placeholder="What do you want to achieve?"
               value={goalName}
               onChangeText={setGoalName}
+              editable={!isLoading}
             />
           </View>
 
@@ -134,6 +215,7 @@ const NewGoal = ({ navigation }: NewGoalProps) => {
               numberOfLines={4}
               value={goalDescription}
               onChangeText={setGoalDescription}
+              editable={!isLoading}
             />
           </View>
 
@@ -153,6 +235,7 @@ const NewGoal = ({ navigation }: NewGoalProps) => {
                     },
                   ]}
                   onPress={() => handleCategorySelect(category.id)}
+                  disabled={isLoading}
                 >
                   <Ionicons
                     name={category.icon}
@@ -180,6 +263,40 @@ const NewGoal = ({ navigation }: NewGoalProps) => {
             </View>
           </View>
 
+          {/* Goal Items Section */}
+          <View style={styles.formGroup}>
+            <View style={styles.goalItemsHeader}>
+              <Text style={styles.label}>Goal Items</Text>
+              <TouchableOpacity
+                style={styles.addItemButton}
+                onPress={addGoalItem}
+                disabled={isLoading}
+              >
+                <Ionicons name="add" size={20} color="#8B5CF6" />
+              </TouchableOpacity>
+            </View>
+            {goalItems.map((item, index) => (
+              <View key={index} style={styles.goalItemContainer}>
+                <TextInput
+                  style={[styles.input, styles.goalItemInput]}
+                  placeholder={`Goal item ${index + 1}`}
+                  value={item}
+                  onChangeText={(value) => updateGoalItem(index, value)}
+                  editable={!isLoading}
+                />
+                {goalItems.length > 1 && (
+                  <TouchableOpacity
+                    style={styles.removeItemButton}
+                    onPress={() => removeGoalItem(index)}
+                    disabled={isLoading}
+                  >
+                    <Ionicons name="close" size={20} color="#EF4444" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+          </View>
+
           {/* Goal Type */}
           <View style={styles.formGroup}>
             <Text style={styles.label}>Goal Type</Text>
@@ -192,6 +309,7 @@ const NewGoal = ({ navigation }: NewGoalProps) => {
                     selectedGoalType === type.id && styles.selectedGoalTypeItem,
                   ]}
                   onPress={() => handleGoalTypeSelect(type.id)}
+                  disabled={isLoading}
                 >
                   <Text
                     style={[
@@ -222,6 +340,7 @@ const NewGoal = ({ navigation }: NewGoalProps) => {
               <TouchableOpacity
                 style={styles.durationButton}
                 onPress={() => handleDurationChange(-1)}
+                disabled={isLoading}
               >
                 <Ionicons name="remove" size={24} color="#6B7280" />
               </TouchableOpacity>
@@ -231,6 +350,7 @@ const NewGoal = ({ navigation }: NewGoalProps) => {
               <TouchableOpacity
                 style={styles.durationButton}
                 onPress={() => handleDurationChange(1)}
+                disabled={isLoading}
               >
                 <Ionicons name="add" size={24} color="#6B7280" />
               </TouchableOpacity>
@@ -243,6 +363,7 @@ const NewGoal = ({ navigation }: NewGoalProps) => {
             <TouchableOpacity
               style={styles.reminderButton}
               onPress={() => setReminder(!reminder)}
+              disabled={isLoading}
             >
               <Text style={styles.reminderButtonText}>
                 {reminder ? "Reminder set" : "Set a reminder"}
@@ -259,10 +380,13 @@ const NewGoal = ({ navigation }: NewGoalProps) => {
         {/* Create Button */}
         <View style={styles.footer}>
           <TouchableOpacity
-            style={styles.createButton}
+            style={[styles.createButton, isLoading && { opacity: 0.5 }]}
             onPress={handleCreateGoal}
+            disabled={isLoading}
           >
-            <Text style={styles.createButtonText}>CREATE GOAL</Text>
+            <Text style={styles.createButtonText}>
+              {isLoading ? "CREATING GOAL..." : "CREATE GOAL"}
+            </Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -356,6 +480,37 @@ const styles = StyleSheet.create({
   },
   selectedCategoryText: {
     fontWeight: "600",
+  },
+  goalItemsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  addItemButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#F3E8FF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  goalItemContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  goalItemInput: {
+    flex: 1,
+    marginRight: 10,
+  },
+  removeItemButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#FEF2F2",
+    justifyContent: "center",
+    alignItems: "center",
   },
   goalTypeContainer: {
     flexDirection: "row",

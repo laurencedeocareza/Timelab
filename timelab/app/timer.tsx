@@ -88,6 +88,7 @@ export default function TimerScreen() {
         } else {
           // Standard technique
           setIsCustomMode(false);
+          setIsWorkTime(true);
           setTimeLeft(techniques[technique as keyof typeof techniques].work);
         }
       } catch (error) {

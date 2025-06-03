@@ -45,6 +45,14 @@ export default function Tools() {
       iconType: "FontAwesome5",
       colors: ["bg-yellow-100", "bg-yellow-200"],
     },
+    {
+      id: 4,
+      title: "Goals",
+      icon: "goals",
+      iconType: "image",
+      colors: ["bg-purple-100", "bg-purple-200"],
+      route: "/goalPage",
+    },
   ];
 
   // Add navigation handler
@@ -86,6 +94,16 @@ export default function Tools() {
           <View style={tw`w-1.5 h-4 bg-purple-400 rounded mx-0.5`} />
           <View style={tw`w-1.5 h-7 bg-purple-500 rounded mx-0.5`} />
           <View style={tw`w-1.5 h-5 bg-pink-400 rounded mx-0.5`} />
+        </View>
+      );
+    } else if (tool.id === 4) {
+      return (
+        <View style={tw`w-12 h-12 items-center justify-center`}>
+          <Image
+            source={require("../../assets/images/goals.png")}
+            style={tw`w-10 h-10`}
+            resizeMode="contain"
+          />
         </View>
       );
     }

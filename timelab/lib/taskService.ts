@@ -29,12 +29,18 @@ export interface Task {
   totalSubtasks: number;
   status: "in-progress" | "completed";
   createdAt: Timestamp;
-  updatedAt: Timestamp;
+  startDate?: Timestamp; // Add this line
+  endDate?: Timestamp;
 }
 
 export const taskService = {
   // Add a new task
-  async addTask(title: string, subtasks: string[]) {
+  async addTask(
+    title: string,
+    subtasks: string[],
+    startDate?: Date,
+    endDate?: Date
+  ) {
     const user = auth.currentUser;
     if (!user) throw new Error("User not authenticated");
 
@@ -45,7 +51,7 @@ export const taskService = {
       priority: "Low",
     }));
 
-    const taskData = {
+    const taskData: any = {
       title,
       userId: user.uid,
       subtasks: subtaskObjects,
@@ -55,6 +61,14 @@ export const taskService = {
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     };
+
+    // Add date fields if provided
+    if (startDate) {
+      taskData.startDate = Timestamp.fromDate(startDate);
+    }
+    if (endDate) {
+      taskData.endDate = Timestamp.fromDate(endDate);
+    }
 
     const docRef = await addDoc(collection(db, "tasks"), taskData);
     return docRef.id;
@@ -157,5 +171,71 @@ export const taskService = {
       subtasks: updatedSubtasks,
       updatedAt: Timestamp.now(),
     });
+  },
+  // Get tasks for a specific date range
+  async getTasksInDateRange(startDate: Date, endDate: Date) {
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated");
+
+    const q = query(
+      collection(db, "tasks"),
+      where("userId", "==", user.uid),
+      orderBy("createdAt", "desc")
+    );
+
+    const querySnapshot = await getDocs(q);
+    const allTasks = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Task[];
+
+    // Filter tasks that overlap with the date range
+    return allTasks.filter((task) => {
+      if (!task.startDate || !task.endDate) return false;
+
+      const taskStart = task.startDate.toDate();
+      const taskEnd = task.endDate.toDate();
+
+      return taskStart <= endDate && taskEnd >= startDate;
+    });
+  },
+
+  // Get tasks for a specific month
+  async getTasksForMonth(year: number, month: number) {
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0);
+    return this.getTasksInDateRange(startDate, endDate);
+  },
+
+  // Get monthly task statistics
+  async getMonthlyTaskStats() {
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated");
+
+    const tasks = await this.getUserTasks();
+
+    // Group tasks by month
+    const monthStats = tasks.reduce((acc, task) => {
+      const createdDate = task.createdAt.toDate();
+      const monthKey = `${createdDate.getFullYear()}-${createdDate.getMonth()}`;
+
+      if (!acc[monthKey]) {
+        acc[monthKey] = {
+          month: createdDate.toLocaleString("default", { month: "long" }),
+          year: createdDate.getFullYear(),
+          tasks: 0,
+          completedTasks: 0,
+        };
+      }
+
+      acc[monthKey].tasks += 1;
+      if (task.status === "completed") {
+        acc[monthKey].completedTasks += 1;
+      }
+
+      return acc;
+    }, {} as Record<string, any>);
+
+    return Object.values(monthStats);
   },
 };
