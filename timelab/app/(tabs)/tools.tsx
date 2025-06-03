@@ -37,6 +37,7 @@ export default function Tools() {
       icon: "moon",
       iconType: "FontAwesome5",
       colors: ["bg-green-100", "bg-green-200"],
+      route: "/sleepTimer", // Route to sleepTimer.tsx file
     },
     {
       id: 3,

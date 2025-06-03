@@ -27,7 +27,7 @@ export default function Tools() {
       title: "Pomodoro",
       icon: require("../assets/images/pomodoro.png"),
       colors: ["bg-green-100", "bg-green-200"],
-      route: "/method-detail?type=pomodoro",
+      route: "/pomodoro",
     },
     {
       id: 2,
@@ -41,7 +41,7 @@ export default function Tools() {
       title: "Flowtime",
       icon: require("../assets/images/flowtime.png"),
       colors: ["bg-purple-100", "bg-purple-200"],
-      route: "/method-detail?type=flowtime",
+      route: "/flowTime", // Route to flowTime.tsx file
     },
     {
       id: 4,
