@@ -5,21 +5,63 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
+  Dimensions,
+  SafeAreaView,
+  StatusBar
 } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
-import Icon from 'react-native-vector-icons/MaterialIcons'; // You can use Lucide if you want
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useRouter } from 'expo-router';
+
+const { width, height } = Dimensions.get('window');
+const CIRCLE_SIZE = Math.min(width * 0.8, 280);
+const BUTTON_SIZE = 64;
+
+// Theme color schemes
+const LightTheme = {
+  background: '#ffffff',
+  cardBackground: '#f9fafb',
+  primaryText: '#1F2937',
+  secondaryText: '#6B7280',
+  accent: '#6366F1',
+  accentGradientStart: '#8B5CF6',
+  accentGradientEnd: '#6366F1',
+  disabled: '#E5E7EB',
+  disabledText: '#9CA3AF',
+  controlBackground: '#6B7280',
+  success: '#10B981',
+  circleBackground: '#E5E7EB',
+};
+
+// Force component to re-render on theme changes
+const useForceUpdate = () => {
+  const [, setValue] = useState(0);
+  return () => setValue(value => value + 1);
+}
 
 const SleepTimer = () => {
+  // Add force update functionality to ensure theme changes are rendered
+  const forceUpdate = useForceUpdate();
+  
+  const router = useRouter();
   const [totalTime, setTotalTime] = useState(30 * 60); // 30 minutes in seconds
   const [timeLeft, setTimeLeft] = useState(totalTime);
   const [isRunning, setIsRunning] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  // Always use light theme
+  const theme = LightTheme;
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const animatedValue = useRef(new Animated.Value(0)).current;
 
-  const radius = 120;
-  const strokeWidth = 8;
+  const radius = CIRCLE_SIZE / 2 - 16; // Adjust radius to fit the screen
+  const strokeWidth = 10;
   const circumference = 2 * Math.PI * radius;
+  
+  // Calculate progress for the circle
+  const progress = totalTime > 0 ? ((totalTime - timeLeft) / totalTime) * 100 : 0;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
 
+  // Keep all the timer logic unchanged
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
       intervalRef.current = setInterval(() => {
@@ -44,6 +86,31 @@ const SleepTimer = () => {
       }
     };
   }, [isRunning, timeLeft]);
+
+  useEffect(() => {
+    Animated.timing(animatedValue, {
+      toValue: progress,
+      duration: 300,
+      useNativeDriver: false
+    }).start();
+
+    if (isFinished) {
+      const pulseAnimation = Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 105,
+          duration: 300,
+          useNativeDriver: false
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 100,
+          duration: 300,
+          useNativeDriver: false
+        })
+      ]);
+
+      Animated.loop(pulseAnimation, { iterations: 3 }).start();
+    }
+  }, [progress, isFinished]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -79,202 +146,286 @@ const SleepTimer = () => {
     setIsFinished(false);
   };
 
-  const progress = totalTime > 0 ? ((totalTime - timeLeft) / totalTime) * 100 : 0;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
-
   return (
-    <View style={styles.container}>
-      {/* Background */}
-      <View style={styles.backgroundStars} />
-
-      <View style={styles.card}>
-        {/* Header */}
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.background} />
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        {/* Header - Centered with consistent spacing */}
         <View style={styles.header}>
-          <Icon name="nights-stay" size={24} color="#ccc" />
-          <Text style={styles.title}>Sleep Timer</Text>
-          <Text style={styles.subtitle}>Sweet dreams await</Text>
+          <Icon name="nights-stay" size={32} color={theme.accent} />
+          <Text style={[styles.title, { color: theme.primaryText }]}>Sleep Timer</Text>
+          <Text style={[styles.subtitle, { color: theme.secondaryText }]}>Sweet dreams await</Text>
         </View>
 
-        {/* Progress */}
-        <View style={styles.progressContainer}>
-          <Svg height="256" width="256">
+        {/* Progress Circle - Perfectly centered */}
+        <View style={styles.circleWrapper}>
+          <Svg height={CIRCLE_SIZE} width={CIRCLE_SIZE} style={styles.svg}>
+            <Defs>
+              <LinearGradient id="timerGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <Stop offset="0%" stopColor={theme.accentGradientStart} />
+                <Stop offset="100%" stopColor={theme.accentGradientEnd} />
+              </LinearGradient>
+            </Defs>
+            {/* Background circle */}
             <Circle
-              cx="128"
-              cy="128"
+              cx={CIRCLE_SIZE / 2}
+              cy={CIRCLE_SIZE / 2}
               r={radius}
-              stroke="#ffffff20"
+              stroke={theme.circleBackground}
               strokeWidth={strokeWidth}
               fill="none"
             />
+            {/* Progress circle */}
             <Circle
-              cx="128"
-              cy="128"
+              cx={CIRCLE_SIZE / 2}
+              cy={CIRCLE_SIZE / 2}
               r={radius}
-              stroke="url(#gradient)"
+              stroke="url(#timerGradient)"
               strokeWidth={strokeWidth}
               fill="none"
               strokeLinecap="round"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
+              transform={`rotate(-90, ${CIRCLE_SIZE / 2}, ${CIRCLE_SIZE / 2})`}
             />
           </Svg>
 
+          {/* Timer Display - Centered within the circle */}
           <View style={styles.timeDisplay}>
-            <Text style={styles.timeText}>{formatTime(timeLeft)}</Text>
-            <Text style={styles.statusText}>
+            <Text style={[styles.timeText, { color: theme.primaryText }]}>{formatTime(timeLeft)}</Text>
+            <Text style={[styles.statusText, { color: theme.secondaryText }]}>
               {isFinished ? "Time's up!" : isRunning ? 'Running...' : 'Ready'}
             </Text>
           </View>
         </View>
 
-        {/* Time Adjustment */}
+        {/* Time Adjustment - Evenly spaced controls */}
         {!isRunning && (
-          <View style={styles.adjustmentButtons}>
-            <TouchableOpacity onPress={() => adjustTime(-5)} style={styles.minusButton}>
-              <Icon name="remove" size={20} color="#fff" />
+          <View style={styles.adjustmentContainer}>
+            <TouchableOpacity 
+              onPress={() => adjustTime(-5)} 
+              style={[styles.minusButton, { backgroundColor: theme.accent }]}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Icon name="remove" size={24} color="#fff" />
             </TouchableOpacity>
+            
             <View style={styles.totalTimeText}>
-              <Text style={{ color: '#aaa', fontSize: 12 }}>Total</Text>
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>
-                {Math.floor(totalTime / 60)}m
-              </Text>
+              <Text style={[styles.totalLabel, { color: theme.secondaryText }]}>Total</Text>
+              <Text style={[styles.totalValue, { color: theme.primaryText }]}>{Math.floor(totalTime / 60)}m</Text>
             </View>
-            <TouchableOpacity onPress={() => adjustTime(5)} style={styles.plusButton}>
-              <Icon name="add" size={20} color="#fff" />
+            
+            <TouchableOpacity 
+              onPress={() => adjustTime(5)} 
+              style={[styles.plusButton, { backgroundColor: theme.accent }]}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Icon name="add" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Controls */}
-        <View style={styles.controlButtons}>
-          <TouchableOpacity onPress={resetTimer} disabled={timeLeft === totalTime && !isRunning}>
-            <Icon name="replay" size={24} color="#fff" />
+        {/* Controls - Aligned and properly sized */}
+        <View style={styles.controlsContainer}>
+          <TouchableOpacity 
+            onPress={resetTimer} 
+            disabled={timeLeft === totalTime && !isRunning}
+            style={[
+              styles.resetButton, 
+              (timeLeft === totalTime && !isRunning) ? 
+                { backgroundColor: theme.disabled } : 
+                { backgroundColor: theme.controlBackground }
+            ]}
+          >
+            <Icon 
+              name="replay" 
+              size={24} 
+              color={(timeLeft === totalTime && !isRunning) ? theme.disabledText : "#fff"} 
+            />
           </TouchableOpacity>
-          <TouchableOpacity onPress={toggleTimer} style={styles.playButton}>
+          
+          <TouchableOpacity 
+            onPress={toggleTimer} 
+            style={[
+              styles.playButton, 
+              { 
+                backgroundColor: isRunning ? 
+                  theme.accentGradientStart : 
+                  theme.accent,
+                shadowColor: theme.accent 
+              }
+            ]}
+          >
             {isRunning ? (
-              <Icon name="pause" size={32} color="#fff" />
+              <Icon name="pause" size={36} color="#fff" />
             ) : (
-              <Icon name="play-arrow" size={32} color="#fff" />
+              <Icon name="play-arrow" size={36} color="#fff" />
             )}
           </TouchableOpacity>
         </View>
 
-        {/* Status Message */}
+        {/* Status Message - Centered with standard margins */}
         {isFinished && (
-          <View style={styles.statusMessage}>
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>🌙 Sleep well!</Text>
+          <View style={[styles.statusMessage, { backgroundColor: theme.success }]}>
+            <Text style={styles.statusMessageText}>🌙 Sleep well!</Text>
           </View>
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
-export default SleepTimer;
-
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#0F172A', // Dark blue background for a calming effect
     justifyContent: 'center',
-    padding: 20,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 40,
   },
-  backgroundStars: {
+  header: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  title: {
+    color: '#1F2937',
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  subtitle: {
+    color: '#6B7280',
+    fontSize: 16,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  circleWrapper: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 40,
+    width: CIRCLE_SIZE,
+    height: CIRCLE_SIZE,
+  },
+  svg: {
     position: 'absolute',
     top: 0,
     left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: -1,
-    backgroundColor: 'linear-gradient(to bottom, #1E293B, #0F172A)', // Subtle gradient for depth
-  },
-  card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)', // Transparent card background
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    color: '#E5E7EB', // Light gray for the title
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    color: '#9CA3AF', // Softer gray for the subtitle
-    fontSize: 14,
-  },
-  progressContainer: {
-    position: 'relative',
-    marginBottom: 20,
   },
   timeDisplay: {
     position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -40 }, { translateY: -20 }],
     alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
   },
   timeText: {
-    color: '#F9FAFB', // White for the timer text
-    fontSize: 32,
+    color: '#1F2937',
+    fontSize: 44,
     fontWeight: 'bold',
+    letterSpacing: 2,
+    textAlign: 'center',
   },
   statusText: {
-    color: '#9CA3AF', // Softer gray for the status text
-    fontSize: 14,
+    color: '#6B7280',
+    fontSize: 16,
+    marginTop: 8,
+    textAlign: 'center',
   },
-  adjustmentButtons: {
+  adjustmentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: 220,
+    marginBottom: 40,
+  },
+  minusButton: {
+    backgroundColor: '#6366F1',
+    borderRadius: 999,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  plusButton: {
+    backgroundColor: '#6366F1',
+    borderRadius: 999,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  totalTimeText: {
+    width: 80,
+    alignItems: 'center',
+  },
+  totalLabel: {
+    color: '#6B7280',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  totalValue: {
+    color: '#1F2937',
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  controlsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-    marginBottom: 20,
+    width: '100%',
+    marginBottom: 30,
   },
-  minusButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', // Subtle button background
+  resetButton: {
+    backgroundColor: '#6B7280',
     borderRadius: 999,
-    padding: 10,
-  },
-  plusButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', // Subtle button background
-    borderRadius: 999,
-    padding: 10,
-  },
-  totalTimeText: {
-    minWidth: 100,
+    width: 48,
+    height: 48,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 32,
   },
-  controlButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '60%',
-    marginBottom: 20,
+  disabledButton: {
+    backgroundColor: '#E5E7EB',
   },
   playButton: {
-    backgroundColor: '#4F46E5', // Indigo for the play button
+    backgroundColor: '#6366F1',
     borderRadius: 999,
-    padding: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
+    width: BUTTON_SIZE,
+    height: BUTTON_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  pauseButton: {
+    backgroundColor: '#8B5CF6',
   },
   statusMessage: {
-    backgroundColor: '#10B981', // Green for the status message
+    backgroundColor: '#10B981',
     borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
   },
+  statusMessageText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
+  }
 });
+
+export default SleepTimer;

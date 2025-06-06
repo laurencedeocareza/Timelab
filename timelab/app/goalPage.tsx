@@ -353,29 +353,15 @@ const GoalsPage = ({ navigation }: GoalsPageProps) => {
 
       {/* Updated Header - removed menu button */}
       <View style={styles.header}>
-        {selectedMonth || selectedWeek ? (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={selectedWeek ? handleBackToWeeks : handleBackToMonths}
-          >
-            <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-        )}
-        <Text style={styles.headerTitle}>
-          {selectedWeek
-            ? "Weekly Goal Details"
-            : selectedMonth
-            ? "Weekly Goals"
-            : "Your Goals"}
-        </Text>
-        <View style={styles.backButton} /> {/* Empty view for spacing */}
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>
+            {selectedWeek
+              ? "Weekly Goal Details"
+              : selectedMonth
+              ? "Weekly Goals"
+              : "Your Goals"}
+          </Text>
+        </View>
       </View>
 
       <ScrollView style={styles.content}>
@@ -410,7 +396,8 @@ const GoalsPage = ({ navigation }: GoalsPageProps) => {
                 <Text style={styles.sectionTitle}>
                   {selectedMonth
                     ? `Weekly Goals for ${
-                        monthlyGoals.find((m) => m.id === selectedMonth)?.month
+                        monthlyGoals.find((m) => m.id === selectedMonth)
+                          ?.month || ""
                       }`
                     : "Weekly Goals"}
                 </Text>
@@ -502,9 +489,11 @@ const GoalsPage = ({ navigation }: GoalsPageProps) => {
                   {selectedGoal.items.length === 0 ? (
                     <Text style={styles.emptyText}>No items yet</Text>
                   ) : (
-                    selectedGoal.items.map((item) =>
-                      renderGoalItem(item, selectedGoal.id)
-                    )
+                    <View>
+                      {selectedGoal.items.map((item) =>
+                        renderGoalItem(item, selectedGoal.id)
+                      )}
+                    </View>
                   )}
                 </View>
               </View>
@@ -545,6 +534,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#8B5CF6",
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
+  },
+  headerTitleContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 24,

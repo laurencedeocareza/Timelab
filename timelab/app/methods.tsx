@@ -27,14 +27,14 @@ export default function Tools() {
       title: "Pomodoro",
       icon: require("../assets/images/pomodoro.png"),
       colors: ["bg-green-100", "bg-green-200"],
-      route: "/pomodoro",
+      route: "pomodoro", // Remove the leading slash
     },
     {
       id: 2,
       title: "Timeboxing",
       icon: require("../assets/images/timeboxing.png"),
       colors: ["bg-blue-100", "bg-blue-200"],
-      route: "/method-detail?type=timeboxing",
+      route: "/timeboxing", // Updated route to direct to timeboxing.tsx
     },
     {
       id: 3,
