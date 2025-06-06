@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,9 @@ import {
   Image,
   SafeAreaView,
   Alert,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 
 // Safe import pattern for ExpoAV to prevent crashes
 let ExpoAV: any = null;
@@ -38,200 +36,124 @@ export default function SoundPlayer() {
   const [hasAudioModule, setHasAudioModule] = useState(false);
   const [sound, setSound] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const isWebPlatform = Platform.OS === 'web';
-  
+
   // Sample tracks with audio files
   const tracks: Track[] = [
-    { 
-      id: '1', 
-      title: '5 Minute Focus', 
-      artist: 'Deep focus music for work and productivity', 
+    {
+      id: '1',
+      title: '5 Minute Focus',
+      artist: 'Deep focus music for work and productivity',
       duration: '5:00',
-      audioFile: Platform.OS === 'web' 
-        ? '/assets/music/5minfocus.mp3'
-        : require('../assets/music/5minfocus.mp3')
+      audioFile: require('../assets/music/5minfocus.mp3'),
     },
-    { 
-      id: '2', 
-      title: 'Calm Waters', 
-      artist: 'Nature Sounds', 
+    {
+      id: '2',
+      title: 'Calm Waters',
+      artist: 'Nature Sounds',
       duration: '3:45',
-      audioFile: Platform.OS === 'web' 
-        ? '/assets/music/5minwater.mp3'
-        : require('../assets/music/5minwater.mp3')
+      audioFile: require('../assets/music/5minwater.mp3'),
     },
-    { 
-      id: '3', 
-      title: 'Forest Ambience', 
-      artist: 'Nature Sounds', 
+    {
+      id: '3',
+      title: 'Forest Ambience',
+      artist: 'Nature Sounds',
       duration: '4:20',
-      audioFile: Platform.OS === 'web' 
-        ? '/assets/music/5minnature.mp3'
-        : require('../assets/music/5minnature.mp3')
+      audioFile: require('../assets/music/5minnature.mp3'),
     },
-    { 
-      id: '4', 
-      title: 'Meditation Bells', 
-      artist: 'Mindfulness', 
+    {
+      id: '4',
+      title: 'Meditation Bells',
+      artist: 'Mindfulness',
       duration: '2:30',
-      audioFile: Platform.OS === 'web' 
-        ? '/assets/music/5minbell.mp3'
-        : require('../assets/music/5minbell.mp3')
+      audioFile: require('../assets/music/5minbell.mp3'),
     },
   ];
 
-  // All audio initialization and playback functions remain unchanged
   useEffect(() => {
-    if (isWebPlatform) {
-      initWebAudio();
-    } else {
-      initNativeAudio();
-    }
+    // Initialize native audio when the component mounts
+    initNativeAudio();
 
+    // Cleanup native audio when the component unmounts
     return () => {
-      if (isWebPlatform) {
-        cleanupWebAudio();
-      } else {
-        cleanupNativeAudio();
-      }
+      cleanupNativeAudio();
     };
   }, []);
 
-  // Initialize web audio
-  const initWebAudio = () => {
-    try {
-      const audio = new Audio();
-      audio.onended = () => playNext();
-      audio.onplay = () => setIsPlaying(true);
-      audio.onpause = () => setIsPlaying(false);
-      audio.onloadstart = () => setIsLoading(true);
-      audio.oncanplaythrough = () => setIsLoading(false);
-      
-      audioRef.current = audio;
-      setHasAudioModule(true);
-      
-      const track = tracks[currentTrackIndex];
-      const audioPath = track.audioFile;
-      
-      const pathParts = audioPath.toString().split('/');
-      const filename = pathParts[pathParts.length - 1];
-      
-      const webAssetPath = window.location.origin + '/assets/music/' + filename;
-      audio.src = webAssetPath;
-      audio.load();
-    } catch (error) {
-      console.error("Failed to initialize web audio:", error);
-      setHasAudioModule(false);
-    }
-  };
-  
-  // Keep all other audio functions unchanged
-  const cleanupWebAudio = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = '';
-    }
-  };
-  
   const initNativeAudio = async () => {
     if (!ExpoAV) {
       setHasAudioModule(false);
       return;
     }
-    
+
     if (!ExpoAV.Audio || !ExpoAV.Audio.Sound) {
       setHasAudioModule(false);
       return;
     }
-    
+
     try {
       const testSound = new ExpoAV.Audio.Sound();
-      
+
       await ExpoAV.Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
         staysActiveInBackground: true,
         shouldDuckAndroid: true,
       });
-      
+
       await testSound.unloadAsync();
-      
+
       setHasAudioModule(true);
       loadNativeTrack(currentTrackIndex, false);
     } catch (error) {
-      console.error("Failed to initialize native audio:", error);
+      console.error('Failed to initialize native audio:', error);
       setHasAudioModule(false);
     }
   };
-  
+
   const cleanupNativeAudio = async () => {
     if (sound) {
       try {
-        await sound.unloadAsync();
+        await sound.unloadAsync(); // Unload the sound object
+        setSound(null); // Clear the sound reference
       } catch (error) {
-        console.error("Error unloading sound:", error);
+        console.error('Error unloading sound:', error);
       }
     }
   };
 
-  const loadWebTrack = (index: number, autoplay: boolean = true) => {
-    if (!audioRef.current) return;
-    
-    setCurrentTrackIndex(index);
-    setIsLoading(true);
-    
-    const track = tracks[index];
-    const audioPath = track.audioFile;
-    
-    const pathParts = audioPath.toString().split('/');
-    const filename = pathParts[pathParts.length - 1];
-    
-    audioRef.current.src = `/assets/music/${filename}`;
-    audioRef.current.load();
-    
-    if (autoplay) {
-      audioRef.current.play().catch(error => {
-        console.error("Error playing web audio:", error);
-        Alert.alert(
-          "Playback Error",
-          "Could not play audio. Please interact with the page first."
-        );
-      });
-    }
-  };
-  
   const loadNativeTrack = async (index: number, autoplay: boolean = true) => {
     if (!ExpoAV || !hasAudioModule) return;
-    
+
     try {
       setIsLoading(true);
-      
+
+      // Unload the existing sound object if it exists
       if (sound) {
         await sound.unloadAsync();
+        setSound(null); // Clear the sound reference
       }
-      
+
       const track = tracks[index];
-      
+
       const { sound: newSound } = await ExpoAV.Audio.Sound.createAsync(
         track.audioFile,
         { shouldPlay: autoplay },
         onNativePlaybackStatusUpdate
       );
-      
+
       setSound(newSound);
       setCurrentTrackIndex(index);
       setIsPlaying(autoplay);
     } catch (error) {
-      console.error("Error loading native track:", error);
+      console.error('Error loading native track:', error);
       Alert.alert(
-        "Playback Error",
-        "Could not play the selected track. Please try again."
+        'Playback Error',
+        'Could not play the selected track. Please try again.'
       );
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const onNativePlaybackStatusUpdate = (status: any) => {
     if (!status.isLoaded) return;
     setIsPlaying(status.isPlaying);
@@ -244,57 +166,43 @@ export default function SoundPlayer() {
     if (!hasAudioModule) {
       setIsPlaying(!isPlaying);
       Alert.alert(
-        "Audio Playback Issue",
+        'Audio Playback Issue',
         "Audio playback is currently unavailable. We're working on fixing this in the next update."
       );
       return;
     }
-    
+
     try {
-      if (isWebPlatform) {
-        if (!audioRef.current) return;
-        
-        if (isPlaying) {
-          audioRef.current.pause();
-        } else {
-          await audioRef.current.play();
-        }
+      if (!sound) {
+        await loadNativeTrack(currentTrackIndex); // Reload the track if sound is null
+        return;
+      }
+
+      if (isPlaying) {
+        await sound.pauseAsync();
+        setIsPlaying(false);
       } else {
-        if (!sound) {
-          loadNativeTrack(currentTrackIndex);
-          return;
-        }
-        
-        if (isPlaying) {
-          await sound.pauseAsync();
-          setIsPlaying(false);
-        } else {
-          await sound.playAsync();
-          setIsPlaying(true);
-        }
+        await sound.playAsync();
+        setIsPlaying(true);
       }
     } catch (error) {
-      console.error("Error toggling playback:", error);
+      console.error('Error toggling playback:', error);
       setIsPlaying(false);
     }
   };
-  
+
   const loadAndPlayTrack = (index: number, play: boolean = true) => {
     if (!hasAudioModule) {
       setCurrentTrackIndex(index);
       setIsPlaying(false);
       Alert.alert(
-        "Audio Playback Issue",
+        'Audio Playback Issue',
         "Audio playback is currently unavailable. We're working on fixing this in the next update."
       );
       return;
     }
-    
-    if (isWebPlatform) {
-      loadWebTrack(index, play);
-    } else {
-      loadNativeTrack(index, play);
-    }
+
+    loadNativeTrack(index, play);
   };
 
   const playPrevious = () => {
@@ -307,15 +215,17 @@ export default function SoundPlayer() {
     loadAndPlayTrack(newIndex);
   };
 
-  // Track item component - for fixed rendering
   const TrackItem = ({ track, index }: { track: Track; index: number }) => (
-    <TouchableOpacity 
-      style={[styles.trackItem, currentTrackIndex === index && styles.activeTrack]} 
+    <TouchableOpacity
+      style={[
+        styles.trackItem,
+        currentTrackIndex === index && styles.activeTrack,
+      ]}
       onPress={() => loadAndPlayTrack(index)}
     >
       <View style={styles.trackIconContainer}>
         <Image
-          source={require('../assets/images/music.png')} 
+          source={require('../assets/images/music.png')}
           style={styles.trackIcon}
           resizeMode="contain"
         />
@@ -329,26 +239,20 @@ export default function SoundPlayer() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Header section removed */}
-
-      {/* Content ScrollView - starts immediately at the top now */}
-      <ScrollView 
+      <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Now Playing Section */}
         <View style={styles.nowPlayingContainer}>
-          {/* Music Icon */}
           <View style={styles.musicIconContainer}>
-            <Image 
-              source={require('../assets/images/music.png')} 
+            <Image
+              source={require('../assets/images/music.png')}
               style={styles.musicIcon}
               resizeMode="contain"
             />
           </View>
-          
-          {/* Track Info */}
+
           <View style={styles.trackInfoContainer}>
             <Text style={styles.nowPlayingTitle}>
               {tracks[currentTrackIndex].title}
@@ -356,46 +260,33 @@ export default function SoundPlayer() {
             <Text style={styles.nowPlayingArtist}>
               {tracks[currentTrackIndex].artist}
             </Text>
-            
-            {/* Audio Message Banner */}
-            {!hasAudioModule && (
-              <View style={styles.audioMessageBanner}>
-                <Text style={styles.audioMessageText}>
-                  Preview mode active. Audio playback will be available in the next update.
-                </Text>
-              </View>
-            )}
           </View>
-          
-          {/* Media Controls */}
+
           <View style={styles.controls}>
             <TouchableOpacity onPress={playPrevious} style={styles.controlButton}>
               <Ionicons name="play-skip-back" size={28} color="#555" />
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.playButton, isLoading && styles.disabledButton]} 
+
+            <TouchableOpacity
+              style={[styles.playButton, isLoading && styles.disabledButton]}
               onPress={togglePlayPause}
               disabled={isLoading}
             >
-              <Ionicons 
-                name={isPlaying ? "pause" : "play"} 
-                size={32} 
-                color="#fff" 
+              <Ionicons
+                name={isPlaying ? 'pause' : 'play'}
+                size={32}
+                color="#fff"
               />
             </TouchableOpacity>
-            
+
             <TouchableOpacity onPress={playNext} style={styles.controlButton}>
               <Ionicons name="play-skip-forward" size={28} color="#555" />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Track List - Fixed list, not scrollable */}
         <View style={styles.tracksContainer}>
           <Text style={styles.sectionTitle}>Sound Library</Text>
-          
-          {/* Fixed Track List */}
           <View style={styles.fixedTrackList}>
             {tracks.map((track, index) => (
               <TrackItem key={track.id} track={track} index={index} />
@@ -452,19 +343,6 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     marginBottom: 24,
-  },
-  audioMessageBanner: {
-    backgroundColor: '#e3f2fd', // Light blue background
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginBottom: 20,
-    width: '90%',
-  },
-  audioMessageText: {
-    color: '#1565c0', // Darker blue text
-    fontSize: 14,
-    textAlign: 'center',
   },
   controls: {
     flexDirection: 'row',
