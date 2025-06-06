@@ -16,12 +16,14 @@
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.laurencejade123.timelab"
+      "package": "com.laurencejade123.timelab",
+      "permissions": ["INTERNET", "AUDIO_RECORDING", "MODIFY_AUDIO_SETTINGS"]
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./assets/images/icon.png",
+      "assets": ["./assets/music/"]
     },
     "plugins": [
       "expo-router",
@@ -31,6 +33,12 @@
           "image": "./assets/images/icon.png",
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
         }
       ]
     ],

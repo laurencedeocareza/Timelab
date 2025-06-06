@@ -45,7 +45,7 @@ export default function Tools() {
       icon: "wave-square",
       iconType: "FontAwesome5",
       colors: ["bg-yellow-100", "bg-yellow-200"],
-      route: "/soundplayer", // Route to soundplayer.tsx file
+      route: "/sounds", // Changed from "/soundplayer" to "/sounds" to match your file name
     },
     {
       id: 4,
