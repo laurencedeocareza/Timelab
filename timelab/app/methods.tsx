@@ -27,7 +27,7 @@ export default function Tools() {
       title: "Pomodoro",
       icon: require("../assets/images/pomodoro.png"),
       colors: ["bg-green-100", "bg-green-200"],
-      route: "pomodoro", // Remove the leading slash
+      route: "/pomodoro", // Add leading slash back
     },
     {
       id: 2,

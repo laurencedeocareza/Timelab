@@ -12,6 +12,7 @@ import {
   Modal,
   ScrollView,
   TextInput,
+  Alert,  // Add Alert import
 } from 'react-native';
 // We'll keep using View instead of LinearGradient
 import { Svg, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
@@ -114,6 +115,13 @@ const PomodoroScreen = () => {
     longBreakTime: '15',
   });
   
+  // Add state to track time for each mode separately
+  const [savedTimes, setSavedTimes] = useState({
+    work: { minutes: selectedPreset.workTime, seconds: 0 },
+    shortBreak: { minutes: selectedPreset.shortBreakTime, seconds: 0 },
+    longBreak: { minutes: selectedPreset.longBreakTime, seconds: 0 },
+  });
+  
   const progressAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -137,40 +145,137 @@ const PomodoroScreen = () => {
     },
   };
   
+  // Timer calculations
   const totalTime = modes[mode].time * 60;
   const currentTime = minutes * 60 + seconds;
-  const progress = 1 - currentTime / totalTime;
+  const progress = totalTime > 0 ? ((totalTime - currentTime) / totalTime) * 100 : 0;
 
+  // REMOVE this useEffect that resets the timer on mode change
+  // useEffect(() => {
+  //   // Only update the current timer if mode changes or preset changes
+  //   if (!isActive) {
+  //     setMinutes(modes[mode].time);
+  //     setSeconds(0);
+  //   }
+  // }, [mode, selectedPreset]);
+
+  // Keep this useEffect only for preset changes
+  useEffect(() => {
+    // Only update times when preset changes - but preserve any running times
+    const updatedTimes = {
+      work: { 
+        minutes: mode === 'work' ? minutes : selectedPreset.workTime, 
+        seconds: mode === 'work' ? seconds : 0 
+      },
+      shortBreak: { 
+        minutes: mode === 'shortBreak' ? minutes : selectedPreset.shortBreakTime, 
+        seconds: mode === 'shortBreak' ? seconds : 0 
+      },
+      longBreak: { 
+        minutes: mode === 'longBreak' ? minutes : selectedPreset.longBreakTime, 
+        seconds: mode === 'longBreak' ? seconds : 0 
+      },
+    };
+    
+    setSavedTimes(updatedTimes);
+    
+    // Only update current timer if not running
+    if (!isActive) {
+      setMinutes(selectedPreset[`${mode}Time`]);
+      setSeconds(0);
+    }
+  }, [selectedPreset]);
+
+  // Simplified timer control
   useEffect(() => {
     let interval: number | undefined;
     if (isActive) {
       interval = setInterval(() => {
-        setSeconds((prevSeconds) => {
+        setSeconds(prevSeconds => {
           if (prevSeconds > 0) return prevSeconds - 1;
-          setMinutes((prevMinutes) => (prevMinutes > 0 ? prevMinutes - 1 : 0));
-          return 59;
+          
+          if (minutes > 0) {
+            setMinutes(prev => prev - 1);
+            return 59;
+          } 
+          
+          // Timer completed
+          setIsActive(false);
+          handleTimerComplete();
+          return 0;
         });
       }, 1000) as unknown as number;
-    } else if (minutes === 0 && seconds === 0) {
-      handleTimerComplete();
     }
-    return () => {
-      if (interval !== undefined) {
-        clearInterval(interval);
-      }
-    };
-  }, [isActive, minutes, seconds]);
 
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isActive, minutes]);
+
+  // Save time on every tick when running (ensures we always have the latest time)
   useEffect(() => {
-    Animated.timing(progressAnim, {
-      toValue: progress,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
-  }, [progress]);
+    if (isActive) {
+      setSavedTimes(prev => ({
+        ...prev,
+        [mode]: { minutes, seconds }
+      }));
+    }
+  }, [minutes, seconds, isActive, mode]);
+
+  // Modified toggleTimer to save current time when pausing
+  const toggleTimer = () => {
+    // If we're pausing the timer, save the current time
+    if (isActive) {
+      setSavedTimes(prev => ({
+        ...prev,
+        [mode]: { minutes, seconds }
+      }));
+    }
+    
+    setIsActive(!isActive);
+
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  // Improved switchMode to truly preserve time between modes
+  const switchMode = (newMode: Mode) => {
+    // Can't switch modes while timer is running
+    if (isActive) {
+      Alert.alert(
+        "Timer Running",
+        "Please pause the timer before switching modes.",
+        [{ text: "OK", style: "cancel" }]
+      );
+      return;
+    }
+    
+    // Save current time before switching
+    setSavedTimes(prev => ({
+      ...prev,
+      [mode]: { minutes, seconds }
+    }));
+
+    // Set new mode
+    setMode(newMode);
+    
+    // Load saved time for the new mode
+    const savedTime = savedTimes[newMode];
+    setMinutes(savedTime.minutes);
+    setSeconds(savedTime.seconds);
+  };
 
   const handleTimerComplete = () => {
-    setIsActive(false);
     Vibration.vibrate([500, 200, 500]);
 
     Animated.sequence([
@@ -189,52 +294,68 @@ const PomodoroScreen = () => {
     if (mode === 'work') {
       setSessions(sessions + 1);
       const nextMode = sessions > 0 && (sessions + 1) % 4 === 0 ? 'longBreak' : 'shortBreak';
+      
+      // Reset the timer for the next mode
+      setSavedTimes(prev => ({
+        ...prev,
+        [nextMode]: { minutes: modes[nextMode].time, seconds: 0 }
+      }));
+      
       switchMode(nextMode);
     } else {
+      // Reset the work timer
+      setSavedTimes(prev => ({
+        ...prev,
+        work: { minutes: modes.work.time, seconds: 0 }
+      }));
+      
       switchMode('work');
     }
   };
 
-  const switchMode = (newMode: Mode) => {
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      setMode(newMode);
-      setMinutes(modes[newMode].time);
-      setSeconds(0);
-      setIsActive(false);
-      progressAnim.setValue(0);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+  // When preset changes, update saved times with default values
+  useEffect(() => {
+    setSavedTimes({
+      work: { minutes: selectedPreset.workTime, seconds: 0 },
+      shortBreak: { minutes: selectedPreset.shortBreakTime, seconds: 0 },
+      longBreak: { minutes: selectedPreset.longBreakTime, seconds: 0 },
     });
-  };
+    
+    // Update current timer only if not running
+    if (!isActive) {
+      setMinutes(modes[mode].time);
+      setSeconds(0);
+    }
+  }, [selectedPreset]);
 
-  const toggleTimer = () => {
-    setIsActive(!isActive);
-
-    Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
+  // Modified resetTimer to only reset the current mode and update savedTimes
   const resetTimer = () => {
     setIsActive(false);
     setMinutes(modes[mode].time);
     setSeconds(0);
+    
+    // Update saved time for current mode to reset value
+    setSavedTimes(prev => ({
+      ...prev,
+      [mode]: { minutes: modes[mode].time, seconds: 0 }
+    }));
+    
+    progressAnim.setValue(0);
+  };
+
+  // Reset all timers function
+  const resetAllTimers = () => {
+    setIsActive(false);
+    setMinutes(modes[mode].time);
+    setSeconds(0);
+    
+    // Reset all saved times to defaults
+    setSavedTimes({
+      work: { minutes: selectedPreset.workTime, seconds: 0 },
+      shortBreak: { minutes: selectedPreset.shortBreakTime, seconds: 0 },
+      longBreak: { minutes: selectedPreset.longBreakTime, seconds: 0 },
+    });
+    
     progressAnim.setValue(0);
   };
 
@@ -287,7 +408,7 @@ const PomodoroScreen = () => {
         <View style={styles.timeDisplay}>
           <Text style={[styles.timeText, { color: themeColors.text }]}>{formatTime(minutes, seconds)}</Text>
           <Text style={[styles.statusText, { color: themeColors.lightText }]}>
-            {isActive ? 'Focus time' : 'Ready to start'}
+            {isActive ? 'Time Running' : 'Ready to start'}
           </Text>
         </View>
       </View>
@@ -365,7 +486,7 @@ const PomodoroScreen = () => {
           ))}
         </View>
 
-        {/* Controls - Aligned and properly sized */}
+        {/* Timer Controls */}
         <View style={styles.controlsContainer}>
           <TouchableOpacity 
             onPress={resetTimer} 
@@ -393,31 +514,35 @@ const PomodoroScreen = () => {
           
           <TouchableOpacity 
             style={[styles.resetButton, { backgroundColor: themeColors.lightText }]}
-            onPress={() => switchMode(mode === 'work' ? 'shortBreak' : 'work')}
+            onPress={() => resetAllTimers()}
           >
-            <Icon name="skip-next" size={20} color="#fff" />
+            <Icon name="restart-alt" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
 
-        {/* Mode selection buttons */}
+        {/* Mode Selection - Updated with disabled state when timer is running */}
         <View style={styles.modeSelectionContainer}>
           <TouchableOpacity 
             style={[
               styles.modeButton, 
               { 
                 backgroundColor: mode === 'work' ? themeColors.primary : 'transparent',
-                borderColor: LightModeColors.work.primary 
+                borderColor: LightModeColors.work.primary,
+                opacity: isActive && mode !== 'work' ? 0.5 : 1  // Dim other modes when timer is active
               }
             ]}
             onPress={() => switchMode('work')}
+            disabled={isActive && mode !== 'work'}  // Disable when timer is active in a different mode
           >
             <Text 
               style={[
                 styles.modeButtonText, 
-                { color: mode === 'work' ? '#fff' : LightModeColors.work.primary }
+                { color: mode === 'work' ? '#fff' : LightModeColors.work.primary,
+                  opacity: isActive && mode !== 'work' ? 0.5 : 1 }
               ]}
             >
-              Focus
+              Focus {mode !== 'work' && savedTimes.work && 
+                `(${savedTimes.work.minutes}:${String(savedTimes.work.seconds).padStart(2, '0')})`}
             </Text>
           </TouchableOpacity>
           
@@ -426,18 +551,22 @@ const PomodoroScreen = () => {
               styles.modeButton, 
               { 
                 backgroundColor: mode === 'shortBreak' ? themeColors.primary : 'transparent',
-                borderColor: LightModeColors.shortBreak.primary 
+                borderColor: LightModeColors.shortBreak.primary,
+                opacity: isActive && mode !== 'shortBreak' ? 0.5 : 1
               }
             ]}
             onPress={() => switchMode('shortBreak')}
+            disabled={isActive && mode !== 'shortBreak'}
           >
             <Text 
               style={[
                 styles.modeButtonText, 
-                { color: mode === 'shortBreak' ? '#fff' : LightModeColors.shortBreak.primary }
+                { color: mode === 'shortBreak' ? '#fff' : LightModeColors.shortBreak.primary,
+                  opacity: isActive && mode !== 'shortBreak' ? 0.5 : 1 }
               ]}
             >
-              Short Break
+              Short Break {mode !== 'shortBreak' && savedTimes.shortBreak && 
+                `(${savedTimes.shortBreak.minutes}:${String(savedTimes.shortBreak.seconds).padStart(2, '0')})`}
             </Text>
           </TouchableOpacity>
           
@@ -446,18 +575,22 @@ const PomodoroScreen = () => {
               styles.modeButton, 
               { 
                 backgroundColor: mode === 'longBreak' ? themeColors.primary : 'transparent',
-                borderColor: LightModeColors.longBreak.primary 
+                borderColor: LightModeColors.longBreak.primary,
+                opacity: isActive && mode !== 'longBreak' ? 0.5 : 1
               }
             ]}
             onPress={() => switchMode('longBreak')}
+            disabled={isActive && mode !== 'longBreak'}
           >
             <Text 
               style={[
                 styles.modeButtonText, 
-                { color: mode === 'longBreak' ? '#fff' : LightModeColors.longBreak.primary }
+                { color: mode === 'longBreak' ? '#fff' : LightModeColors.longBreak.primary,
+                  opacity: isActive && mode !== 'longBreak' ? 0.5 : 1 }
               ]}
             >
-              Long Break
+              Long Break {mode !== 'longBreak' && savedTimes.longBreak && 
+                `(${savedTimes.longBreak.minutes}:${String(savedTimes.longBreak.seconds).padStart(2, '0')})`}
             </Text>
           </TouchableOpacity>
         </View>
@@ -595,28 +728,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   subtitle: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  presetButton: {
-    marginTop: 8,
-  },
-  presetSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  presetText: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-  circleWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
     marginVertical: 20,
+    marginTop: 4,
   },
   timeDisplay: {
     position: 'absolute',
@@ -725,6 +838,7 @@ const styles = StyleSheet.create({
   },
   presetItemDetails: {
     fontSize: 14,
+    marginBottom: 20,
   },
   customPresetItem: {
     marginBottom: 30,
@@ -737,10 +851,12 @@ const styles = StyleSheet.create({
   customInputGroup: {
     alignItems: 'center',
     width: '30%',
+    marginBottom: 12,
   },
   inputLabel: {
     fontSize: 12,
     marginBottom: 4,
+    fontWeight: '600',
   },
   customInput: {
     width: '100%',
@@ -764,7 +880,24 @@ const styles = StyleSheet.create({
   applyButtonText: {
     color: '#fff',
     fontWeight: '600',
-    fontSize: 16,
+  },
+  circleWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  presetButton: {
+    marginTop: 8,
+  },
+  presetSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  presetText: {
+    fontSize: 14,
+    marginRight: 4,
   },
 });
 
