@@ -12,6 +12,7 @@ import {
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
+import { Audio } from 'expo-av'; // Import Audio from expo-av
 
 const { width, height } = Dimensions.get('window');
 const CIRCLE_SIZE = Math.min(width * 0.8, 280);
@@ -40,28 +41,70 @@ const useForceUpdate = () => {
 }
 
 const SleepTimer = () => {
-  // Add force update functionality to ensure theme changes are rendered
   const forceUpdate = useForceUpdate();
-  
   const router = useRouter();
   const [totalTime, setTotalTime] = useState(30 * 60); // 30 minutes in seconds
   const [timeLeft, setTimeLeft] = useState(totalTime);
   const [isRunning, setIsRunning] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
-  // Always use light theme
+  const [isAlarmPlaying, setIsAlarmPlaying] = useState(false); // Track alarm state
   const theme = LightTheme;
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const animatedValue = useRef(new Animated.Value(0)).current;
+  const soundRef = useRef<Audio.Sound | null>(null); // Reference for the alarm sound
 
   const radius = CIRCLE_SIZE / 2 - 16; // Adjust radius to fit the screen
   const strokeWidth = 10;
   const circumference = 2 * Math.PI * radius;
-  
-  // Calculate progress for the circle
+
   const progress = totalTime > 0 ? ((totalTime - timeLeft) / totalTime) * 100 : 0;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
-  // Keep all the timer logic unchanged
+  // Load alarm sound
+  const loadAlarmSound = async () => {
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        require('../assets/alarm.mp3') // Path to your alarm sound file
+      );
+      sound.setIsLoopingAsync(true); // Enable looping
+      soundRef.current = sound;
+    } catch (error) {
+      console.error('Error loading alarm sound:', error);
+    }
+  };
+
+  // Play alarm sound
+  const playAlarmSound = async () => {
+    if (soundRef.current) {
+      await soundRef.current.playAsync();
+      setIsAlarmPlaying(true); // Set alarm state to playing
+    }
+  };
+
+  // Stop alarm sound
+  const stopAlarmSound = async () => {
+    if (soundRef.current) {
+      await soundRef.current.stopAsync();
+      setIsAlarmPlaying(false); // Set alarm state to stopped
+    }
+  };
+
+  // Unload alarm sound
+  const unloadAlarmSound = async () => {
+    if (soundRef.current) {
+      await soundRef.current.unloadAsync();
+      soundRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    loadAlarmSound();
+
+    return () => {
+      unloadAlarmSound();
+    };
+  }, []);
+
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
       intervalRef.current = setInterval(() => {
@@ -69,6 +112,7 @@ const SleepTimer = () => {
           if (prev <= 1) {
             setIsRunning(false);
             setIsFinished(true);
+            playAlarmSound(); // Play alarm sound when timer ends
             return 0;
           }
           return prev - 1;
@@ -144,20 +188,21 @@ const SleepTimer = () => {
     setIsRunning(false);
     setTimeLeft(totalTime);
     setIsFinished(false);
+    stopAlarmSound(); // Stop alarm sound if playing
   };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={theme.background} />
       <View style={[styles.container, { backgroundColor: theme.background }]}>
-        {/* Header - Centered with consistent spacing */}
+        {/* Header */}
         <View style={styles.header}>
           <Icon name="nights-stay" size={32} color={theme.accent} />
           <Text style={[styles.title, { color: theme.primaryText }]}>Sleep Timer</Text>
           <Text style={[styles.subtitle, { color: theme.secondaryText }]}>Sweet dreams await</Text>
         </View>
 
-        {/* Progress Circle - Perfectly centered */}
+        {/* Progress Circle */}
         <View style={styles.circleWrapper}>
           <Svg height={CIRCLE_SIZE} width={CIRCLE_SIZE} style={styles.svg}>
             <Defs>
@@ -166,7 +211,6 @@ const SleepTimer = () => {
                 <Stop offset="100%" stopColor={theme.accentGradientEnd} />
               </LinearGradient>
             </Defs>
-            {/* Background circle */}
             <Circle
               cx={CIRCLE_SIZE / 2}
               cy={CIRCLE_SIZE / 2}
@@ -175,7 +219,6 @@ const SleepTimer = () => {
               strokeWidth={strokeWidth}
               fill="none"
             />
-            {/* Progress circle */}
             <Circle
               cx={CIRCLE_SIZE / 2}
               cy={CIRCLE_SIZE / 2}
@@ -190,7 +233,6 @@ const SleepTimer = () => {
             />
           </Svg>
 
-          {/* Timer Display - Centered within the circle */}
           <View style={styles.timeDisplay}>
             <Text style={[styles.timeText, { color: theme.primaryText }]}>{formatTime(timeLeft)}</Text>
             <Text style={[styles.statusText, { color: theme.secondaryText }]}>
@@ -199,12 +241,13 @@ const SleepTimer = () => {
           </View>
         </View>
 
-        {/* Time Adjustment - Evenly spaced controls */}
-        {!isRunning && (
+        {/* Time Adjustment */}
+        {!isRunning && !isAlarmPlaying && (
           <View style={styles.adjustmentContainer}>
             <TouchableOpacity 
               onPress={() => adjustTime(-5)} 
-              style={[styles.minusButton, { backgroundColor: theme.accent }]}
+              style={[styles.minusButton, { backgroundColor: theme.accent }]
+              }
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Icon name="remove" size={24} color="#fff" />
@@ -217,7 +260,8 @@ const SleepTimer = () => {
             
             <TouchableOpacity 
               onPress={() => adjustTime(5)} 
-              style={[styles.plusButton, { backgroundColor: theme.accent }]}
+              style={[styles.plusButton, { backgroundColor: theme.accent }]
+              }
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Icon name="add" size={24} color="#fff" />
@@ -225,47 +269,62 @@ const SleepTimer = () => {
           </View>
         )}
 
-        {/* Controls - Aligned and properly sized */}
+        {/* Controls */}
         <View style={styles.controlsContainer}>
-          <TouchableOpacity 
-            onPress={resetTimer} 
-            disabled={timeLeft === totalTime && !isRunning}
-            style={[
-              styles.resetButton, 
-              (timeLeft === totalTime && !isRunning) ? 
-                { backgroundColor: theme.disabled } : 
-                { backgroundColor: theme.controlBackground }
-            ]}
-          >
-            <Icon 
-              name="replay" 
-              size={24} 
-              color={(timeLeft === totalTime && !isRunning) ? theme.disabledText : "#fff"} 
-            />
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            onPress={toggleTimer} 
-            style={[
-              styles.playButton, 
-              { 
-                backgroundColor: isRunning ? 
-                  theme.accentGradientStart : 
-                  theme.accent,
-                shadowColor: theme.accent 
+          {!isAlarmPlaying && (
+            <>
+              <TouchableOpacity 
+                onPress={resetTimer} 
+                disabled={timeLeft === totalTime && !isRunning}
+                style={[
+                  styles.resetButton, 
+                  (timeLeft === totalTime && !isRunning) ? 
+                    { backgroundColor: theme.disabled } : 
+                    { backgroundColor: theme.controlBackground }
+                ]}
+              >
+                <Icon 
+                  name="replay" 
+                  size={24} 
+                  color={(timeLeft === totalTime && !isRunning) ? theme.disabledText : "#fff"} 
+                />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                onPress={toggleTimer} 
+                style={[
+                  styles.playButton, 
+                  { 
+                    backgroundColor: isRunning ? 
+                      theme.accentGradientStart : 
+                      theme.accent,
+                    shadowColor: theme.accent 
+                  }
+                ]}
+              >
+                {isRunning ? (
+                  <Icon name="pause" size={36} color="#fff" />
+                ) : (
+                  <Icon name="play-arrow" size={36} color="#fff" />
+                )}
+              </TouchableOpacity>
+            </>
+          )}
+
+          {/* Stop Alarm Button */}
+          {isAlarmPlaying && (
+            <TouchableOpacity 
+              onPress={stopAlarmSound} 
+              style={[styles.stopButton, { backgroundColor: theme.success }]
               }
-            ]}
-          >
-            {isRunning ? (
-              <Icon name="pause" size={36} color="#fff" />
-            ) : (
-              <Icon name="play-arrow" size={36} color="#fff" />
-            )}
-          </TouchableOpacity>
+            >
+              <Text style={styles.stopButtonText}>Stop Alarm</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* Status Message - Centered with standard margins */}
-        {isFinished && (
+        {/* Status Message */}
+        {isFinished && !isAlarmPlaying && (
           <View style={[styles.statusMessage, { backgroundColor: theme.success }]}>
             <Text style={styles.statusMessageText}>🌙 Sleep well!</Text>
           </View>
@@ -425,7 +484,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     textAlign: 'center',
-  }
+  },
+  stopButton: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stopButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 });
 
 export default SleepTimer;
